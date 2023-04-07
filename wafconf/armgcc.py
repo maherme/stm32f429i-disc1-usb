@@ -17,14 +17,17 @@ def configure(conf):
  #   libs       = ["c", "nosys", "m"]
     c_flags    = [""]
     linker_script = conf.path.abspath() + '/lnk/STM32F429ZITX.ld'
-    link_flags = ["-Wl,--gc-sections",
-                  "-Wl,--print-memory-usage",
-                  "-Wl,--no-warn-rwx-segments",     # To avoid a warning in Binutils 2.39 "elf has a LOAD segment with RWX permissions"
-                  "--specs=nosys.specs",
-                  "--specs=nano.specs",
-                  "-static",
-                  "-Wl,-Map=stm32f429i-disc1.map",
-                  "-T" + linker_script]
+    link_flags = [
+        "-Wl,--gc-sections",
+        "-Wl,--print-memory-usage",
+        # To avoid a warning in Binutils 2.39 "elf has a LOAD segment with RWX permissions"
+        "-Wl,--no-warn-rwx-segments",
+        "--specs=nosys.specs",
+        "--specs=nano.specs",
+        "-static",
+        "-Wl,-Map=stm32f429i-disc1.map",
+        "-T" + linker_script
+    ]
 
     # configure cc for arm
     conf.load("c_config")
@@ -51,4 +54,4 @@ def configure(conf):
     conf.env.CXXLNK_TGT_F = ['-o']
     conf.env.CXX_TGT_F    = ['-c', '-o']
     conf.env.INCLUDES     = []
-    conf.env.DEFINES      = []
+    conf.env.DEFINES      = ["STM32F429xx"]

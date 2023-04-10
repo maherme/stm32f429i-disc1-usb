@@ -4,10 +4,11 @@
 * @brief File containing the main function.
 **/
 
-#include "stm32f4xx.h"
+#include "logger.h"
 
 int main(void){
 
-    for(;;){
-    }
+    log_info("Program entrypoint");
+
+    for(;;);
 }

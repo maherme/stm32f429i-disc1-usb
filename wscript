@@ -7,11 +7,14 @@ out = 'build'
 app_name = 'stm32f429i-disc1'
 source_files = [
     'src/startup_stm32f429zitx.s',
-    'src/main.c'
+    'src/systeminit.c',
+    'src/main.c',
+    'src/logger.c'
 ]
 include_path = [
     'inc/CMSIS/Device/ST/STM32F4xx/Include',
-    'inc/CMSIS/Include'
+    'inc/CMSIS/Include',
+    'src'
 ]
 
 def configure(cnf):

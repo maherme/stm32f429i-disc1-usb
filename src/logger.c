@@ -23,7 +23,21 @@
 /*                                       Static Function Prototypes                                        */
 /***********************************************************************************************************/
 
+/**
+ * @brief Function which returns a string describing the level of log set.
+ * @param[in] log_level is a enum with the possible levels of log.
+ * @return a string describing the level of log set.
+ */
 static char const* const _get_log_level_string(log_level_t const log_level);
+
+/**
+ * @brief helper function which prints information according to a defined level of log using the standard
+ *        output.
+ * @param[in] log_level is a enum with the possible levels of log.
+ * @param[in] format is a string with the information to be printed.
+ * @param[in] args is a va_list type for ellipsis parameter.
+ * @return void.
+ */
 static void _log(log_level_t const log_level, char const* const format, va_list args);
 
 /***********************************************************************************************************/
@@ -75,6 +89,9 @@ void log_debug_array(char const* const label, void const* array, uint16_t const 
 /*                                       Weak Functions                                                    */
 /***********************************************************************************************************/
 
+/**
+ * @brief Function which overrides the _write function defined in the system call library. 
+ */
 int _write(int file, char* ptr, int len)
 {
     for(int i = 0; i < len; i++){

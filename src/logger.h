@@ -32,9 +32,34 @@ extern log_level_t system_log_level;
 /*                                       APIs Supported                                                    */
 /***********************************************************************************************************/
 
+/**
+ * @brief function which prints information with error log level.
+ * @param[in] format is a string with the information to be printed.
+ * @return void.
+ */
 void log_error(char const* const format, ...);
+
+/**
+ * @brief function which prints information with info log level.
+ * @param[in] format is a string with the information to be printed.
+ * @return void.
+ */
 void log_info(char const* const format, ...);
+
+/**
+ * @brief function which prints information with debug log level.
+ * @param[in] format is a string with the information to be printed.
+ * @return void.
+ */
 void log_debug(char const* const format, ...);
+
+/**
+ * @brief function which prints bytes in hexadecimal format with debug log level.
+ * @param[in] label is a label to be printed before the array of bytes.
+ * @param[in] array is the array to be printed.
+ * @param[in] len is the length of the string in bytes.
+ * @return void.
+ */
 void log_debug_array(char const* const label, void const* array, uint16_t const len);
 
 #endif /* LOGGER_H */

@@ -14,7 +14,7 @@ def find_armgcc(conf):
     conf.get_cc_version(conf.env.CC, gcc=True)
 
 def configure(conf):
- #   libs       = ["c", "nosys", "m"]
+#    libs       = ["c", "nosys", "m"]
     c_flags    = [""]
     linker_script = conf.path.abspath() + '/lnk/STM32F429ZITX.ld'
     link_flags = [

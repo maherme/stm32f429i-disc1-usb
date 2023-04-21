@@ -8,7 +8,6 @@ common_flags = [
     "-ffunction-sections",
     "-fdata-sections",
     "-Wall",
-    "--specs=nano.specs",
 ]
 
 @conf

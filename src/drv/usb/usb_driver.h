@@ -4,6 +4,9 @@
 * @brief Header file containing the prototypes of the APIs for USB driver.
 *
 * Public Functions:
+*       - void USB_Init(void)
+*       - void USB_Connect(void)
+*       - void USB_Disconnect(void)
 */
 
 #ifndef USB_DRIVER_H
@@ -19,12 +22,6 @@
 /***********************************************************************************************************/
 /*                                       APIs Supported                                                    */
 /***********************************************************************************************************/
-
-/**
- * @brief Function for configuring the GPIO for USB peripheral.
- * @return void.
- */
-void GPIO_Init(void);
 
 /**
  * @brief Function for initializing the USB peripheral.

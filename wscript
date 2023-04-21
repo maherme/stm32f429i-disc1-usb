@@ -9,12 +9,15 @@ source_files = [
     'src/startup_stm32f429zitx.s',
     'src/systeminit.c',
     'src/main.c',
-    'src/logger.c'
+    'src/hlp/logger.c',
+    'src/drv/usb/usb_driver.c'
 ]
 include_path = [
     'inc/CMSIS/Device/ST/STM32F4xx/Include',
     'inc/CMSIS/Include',
-    'src'
+    'src',
+    'src/hlp',
+    'src/drv/usb'
 ]
 
 def configure(cnf):

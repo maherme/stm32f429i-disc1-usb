@@ -13,6 +13,7 @@
 **/
 
 #include "usb_driver.h"
+#include "logger.h"
 #include "stm32f4xx.h"
 #include <stdint.h>
 
@@ -36,17 +37,85 @@ static inline __attribute__((always_inline)) USB_OTG_INEndpointTypeDef* IN_ENDPO
  */
 static inline __attribute__((always_inline)) USB_OTG_OUTEndpointTypeDef* OUT_ENDPOINT(uint8_t endpoint_number);
 
-static void USB_configure_endpoint0(uint16_t endpoint_size);
+/**
+ * @brief Function for getting the FIFO data of an enpoint.
+ * @param[in] endpoint_number The number of the endpoint to access its FIFO.
+ * @return a pointer to the FIFO data.
+ */
+static inline __attribute__((always_inline)) __IO uint32_t* FIFO(uint8_t endpoint_number);
 
-static void USB_configure_in_endpoint(uint8_t endpoint_number,
+/**
+ * @brief Function for configuring the endpoint 0
+ * @param[in] endpoint_size is the size of the endpoint.
+ * @return void
+ */
+static void USB_Configure_Endpoint0(uint16_t endpoint_size);
+
+/**
+ * @brief Function for configuring an IN endpoint
+ * @param[in] endpoint_number is the number of the endpoint to configure.
+ * @param[in] endpoint_type is the type of endpoint to configure.
+ * @param[in] endpoint_size is the size of the endpoint to configure.
+ * @return void
+ */
+static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
                                       USBEndpointType endpoint_type,
                                       uint16_t endpoint_size);
+
+/**
+ * @brief Function for deconfiguring an endpoint
+ * @param[in] endpoint_number is the number of the endpoint to deconfigure.
+ * @return void
+ */
+static void USB_Deconfigure_Endpoint(uint8_t endpoint_number);
+
+/**
+ * @brief Function for flushing the RxFIFO of all OUT endpoints.
+ * @return void
+ */
+static void USB_Flush_RxFIFO(void);
+
+/**
+ * @brief Function for flushing the TxFIFO of an IN endpoint.
+ * @param[in] endpoint_number is the number of an IN endpoint to flush its FIFO.
+ * @return void
+ */
+static void USB_Flush_TxFIFO(uint8_t endpoint_number);
+
+/**
+ * @brief Function for configuring the RxFIFO of all OUT endpoints.
+ * @param[in] size is the size of the largest OUT endpoint in bytes.
+ * @return void
+ * @note The RxFIFO is shared between all OUT endpoints.
+ */
+static void USB_Configure_RxFIFO_Size(uint16_t size);
+
+/**
+ * @brief Function for configuring the TxFIFO of all IN endpoints.
+ * @param[in] endpoint_number is the number of the IN endpoint for configuring its TxFIFO.
+ * @param[in] size is the size of the IN endpoint in bytes.
+ * @return void
+ * @note Any change on any FIFO will update the registers of all TxFIFOs to adapt the start offsets.
+ */
+static void USB_Configure_TxFIFO_Size(uint8_t endpoint_number, uint16_t size);
+
+/**
+ * @brief Function for updating the start addresses of all FIFOs according to the size of each FIFO.
+ * @return void
+ */
+static inline __attribute__((always_inline)) void USB_Refresh_FIFO_Start_Addresses(void);
 
 /**
  * @brief Function for managing the RST interrupt of the USB peripheral.
  * @return void
  */
 static inline __attribute__((always_inline)) void USB_RST_Handler(void);
+
+/**
+ * @brief Function for managing the enumeration done interrupt of the USB peripheral.
+ * @return void
+ */
+static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void);
 
 /***********************************************************************************************************/
 /*                                       Public API Definitions                                            */
@@ -83,6 +152,10 @@ void USB_Init(void)
 
     /* Unmask USB global interrupt */
     SET_BIT(USB_OTG_HS->GAHBCFG, USB_OTG_GAHBCFG_GINT);
+
+    /* Unmask tx completed interrupt for all endpoints */
+    SET_BIT(USB_OTG_HS_DEVICE->DOEPMSK, USB_OTG_DOEPMSK_XFRCM);
+    SET_BIT(USB_OTG_HS_DEVICE->DIEPMSK, USB_OTG_DIEPMSK_XFRCM);
 }
 
 void USB_Connect(void)
@@ -108,11 +181,14 @@ void USB_IRQ_Handler(void)
     volatile uint32_t irq = USB_OTG_HS_GLOBAL->GINTSTS;
 
     if(irq & USB_OTG_GINTSTS_USBRST){
+        USB_RST_Handler();
         /* Clear irq */
         SET_BIT(irq, USB_OTG_GINTSTS_USBRST);
     }
     else if(irq & USB_OTG_GINTSTS_ENUMDNE){
-
+        USB_Enum_Done_Handler();
+        /* Clear irq */
+        SET_BIT(irq, USB_OTG_GINTSTS_ENUMDNE);
     }
     else if(irq & USB_OTG_GINTSTS_RXFLVL){
 
@@ -146,7 +222,12 @@ static inline __attribute__((always_inline)) USB_OTG_OUTEndpointTypeDef* OUT_END
                                         (endpoint_number * 0x20));
 }
 
-static void USB_configure_endpoint0(uint16_t endpoint_size)
+static inline __attribute__((always_inline)) __IO uint32_t* FIFO(uint8_t endpoint_number)
+{
+    return (__IO uint32_t*)(USB_OTG_HS_PERIPH_BASE + USB_OTG_FIFO_BASE + (endpoint_number * 0x1000));
+}
+
+static void USB_Configure_Endpoint0(uint16_t endpoint_size)
 {
     /* Unmask irq of IN and OUT endpoint0 */
     SET_BIT(USB_OTG_HS_DEVICE->DAINTMSK, (1 << 0) | (1 << 16));
@@ -160,9 +241,13 @@ static void USB_configure_endpoint0(uint16_t endpoint_size)
 
     /* Clear NAK and enable endpoint data transmission */
     SET_BIT(OUT_ENDPOINT(0)->DOEPCTL, USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK);
+
+    /* 64 bytes is the maximum packet size for full speed USB devices */
+    USB_Configure_RxFIFO_Size(64);
+    USB_Configure_TxFIFO_Size(0, endpoint_size);
 }
 
-static void USB_configure_in_endpoint(uint8_t endpoint_number,
+static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
                                       USBEndpointType endpoint_type,
                                       uint16_t endpoint_size)
 {
@@ -173,15 +258,123 @@ static void USB_configure_in_endpoint(uint8_t endpoint_number,
        configures its type, its maximum packet size and assigns it a TxFIFO */
     MODIFY_REG(
         IN_ENDPOINT(endpoint_number)->DIEPCTL,
-        USB_OTG_DIEPCTL_MPSIZ | USB_OTG_DIEPCTL_EPTYP,
+        USB_OTG_DIEPCTL_MPSIZ | USB_OTG_DIEPCTL_EPTYP | USB_OTG_DIEPCTL_TXFNUM,
         USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) | USB_OTG_DIEPCTL_SNAK |
-        _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) | USB_OTG_DIEPCTL_SD0PID_SEVNFRM
+        _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) | _VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, endpoint_number) |
+        USB_OTG_DIEPCTL_SD0PID_SEVNFRM
     );
+
+    USB_Configure_TxFIFO_Size(endpoint_number, endpoint_size);
+}
+
+static void USB_Deconfigure_Endpoint(uint8_t endpoint_number)
+{
+    USB_OTG_INEndpointTypeDef* in_endpoint = IN_ENDPOINT(endpoint_number);
+    USB_OTG_OUTEndpointTypeDef* out_endpoint = OUT_ENDPOINT(endpoint_number);
+
+    /* Mask all interrupts of the IN and OUT endpoints */
+    CLEAR_BIT(USB_OTG_HS_DEVICE->DAINTMSK, (1 << endpoint_number) | (1 << 16 << endpoint_number));
+
+    /* Clear all interrupts of the endpoint */
+    SET_BIT(in_endpoint->DIEPINT, 0x29FF);
+    SET_BIT(out_endpoint->DOEPINT, 0x715F);
+
+    /* Disable endpoint */
+    if(in_endpoint->DIEPCTL & USB_OTG_DIEPCTL_EPENA){
+        SET_BIT(in_endpoint->DIEPCTL, USB_OTG_DIEPCTL_EPDIS);
+    }
+
+    /* Deactivates the endpoint */
+    CLEAR_BIT(in_endpoint->DIEPCTL, USB_OTG_DIEPCTL_USBAEP);
+
+    if(endpoint_number != 0){
+        if(out_endpoint->DOEPCTL, USB_OTG_DOEPCTL_EPENA){
+            SET_BIT(out_endpoint->DOEPCTL, USB_OTG_DOEPCTL_EPDIS);
+        }
+        /* Deactivate endpoint */
+        CLEAR_BIT(out_endpoint->DOEPCTL, USB_OTG_DOEPCTL_USBAEP);
+    }
+
+    /* Flush the FIFOs */
+    USB_Flush_TxFIFO(endpoint_number);
+    USB_Flush_RxFIFO();
+}
+
+static void USB_Flush_RxFIFO(void)
+{
+    SET_BIT(USB_OTG_HS->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
+}
+
+static void USB_Flush_TxFIFO(uint8_t endpoint_number)
+{
+    /* Set the number of the TxFIFO to be flushed and then triggers the flush */
+    MODIFY_REG(
+        USB_OTG_HS->GRSTCTL,
+        USB_OTG_GRSTCTL_TXFNUM,
+        _VAL2FLD(USB_OTG_GRSTCTL_TXFNUM, endpoint_number) | USB_OTG_GRSTCTL_TXFFLSH
+    );
+}
+
+static void USB_Configure_RxFIFO_Size(uint16_t size)
+{
+    /* Space required to save status packets in RxFIFO and gets the size in term of 32 bits */
+    size = 10 + (2*((size/4) + 1));
+
+    /* Configure the size of the FIFO */
+    MODIFY_REG(USB_OTG_HS->GRXFSIZ, USB_OTG_GRXFSIZ_RXFD, _VAL2FLD(USB_OTG_GRXFSIZ_RXFD, size));
+
+    USB_Refresh_FIFO_Start_Addresses();
+}
+
+static void USB_Configure_TxFIFO_Size(uint8_t endpoint_number, uint16_t size)
+{
+    /* Get FIFO size in term of 32 bit words */
+    size = (size + 3)/4;
+
+    /* Configure the size of the TxFIFO */
+    if(endpoint_number == 0){
+        MODIFY_REG(USB_OTG_HS->DIEPTXF0_HNPTXFSIZ, USB_OTG_TX0FD, _VAL2FLD(USB_OTG_TX0FD, size));
+    }
+    else{
+        MODIFY_REG(
+            USB_OTG_HS->DIEPTXF[endpoint_number - 1],
+            USB_OTG_NPTXFD,
+            _VAL2FLD(USB_OTG_NPTXFD, size)
+        );
+    }
+    USB_Refresh_FIFO_Start_Addresses();
+}
+
+static inline __attribute__((always_inline)) void USB_Refresh_FIFO_Start_Addresses(void)
+{
+    /* First changeable start address begins after the region of RxFIFO */
+    uint16_t start_address = _FLD2VAL(USB_OTG_GRXFSIZ_RXFD, USB_OTG_HS->GRXFSIZ)*4;
+
+    /* Update the start address of the TxFIFO */
+    MODIFY_REG(USB_OTG_HS->DIEPTXF0_HNPTXFSIZ, USB_OTG_TX0FSA, _VAL2FLD(USB_OTG_TX0FSA, start_address));
+
+    /* Next start address is after where the last TxFIFO ends */
+    start_address += _FLD2VAL(USB_OTG_TX0FD, USB_OTG_HS->DIEPTXF0_HNPTXFSIZ)*4;
+
+    /* Update the start address of the rest of TxFIFOs */
+    for(uint8_t i = 0; i < (USB_ENDPOINT_COUNT - 1); i++){
+        MODIFY_REG(USB_OTG_HS->DIEPTXF[i], USB_OTG_NPTXFSA, _VAL2FLD(USB_OTG_NPTXFSA, start_address));
+        start_address += _FLD2VAL(USB_OTG_NPTXFD, USB_OTG_HS->DIEPTXF[i])*4;
+    }
 }
 
 static inline __attribute__((always_inline)) void USB_RST_Handler(void)
 {
-    for(uint8_t i = 0; i <= USB_ENDPOINT_COUNT; i++){
+    log_info("USB reset signal was detected");
 
+    for(uint8_t i = 0; i <= USB_ENDPOINT_COUNT; i++){
+        USB_Deconfigure_Endpoint(i);
     }
+}
+
+static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void)
+{
+    log_info("USB device speed enumeration done");
+
+    USB_Configure_Endpoint0(8);
 }

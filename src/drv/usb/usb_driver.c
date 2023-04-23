@@ -117,6 +117,12 @@ static inline __attribute__((always_inline)) void USB_RST_Handler(void);
  */
 static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void);
 
+/**
+ * @brief Function for managing the rx FIFO non empty interrupt of the USB peripheral.
+ * @return void
+ */
+static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(void);
+
 /***********************************************************************************************************/
 /*                                       Public API Definitions                                            */
 /***********************************************************************************************************/
@@ -180,18 +186,23 @@ void USB_IRQ_Handler(void)
 {
     volatile uint32_t irq = USB_OTG_HS_GLOBAL->GINTSTS;
 
+    /* Reset irq */
     if(irq & USB_OTG_GINTSTS_USBRST){
         USB_RST_Handler();
         /* Clear irq */
         SET_BIT(irq, USB_OTG_GINTSTS_USBRST);
     }
+    /* Enumeration done irq */
     else if(irq & USB_OTG_GINTSTS_ENUMDNE){
         USB_Enum_Done_Handler();
         /* Clear irq */
         SET_BIT(irq, USB_OTG_GINTSTS_ENUMDNE);
     }
+    /* Rx-FIFO non-empty irq */
     else if(irq & USB_OTG_GINTSTS_RXFLVL){
-
+        USB_RxFIFO_Non_Empty_Handler();
+        /* Clear irq */
+        SET_BIT(irq, USB_OTG_GINTSTS_RXFLVL);
     }
     else if(irq & USB_OTG_GINTSTS_IEPINT){
 
@@ -377,4 +388,37 @@ static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void)
     log_info("USB device speed enumeration done");
 
     USB_Configure_Endpoint0(8);
+}
+
+static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(void)
+{
+    /* Pop the status information word from the RxFIFO */
+    uint32_t rx_status = USB_OTG_HS_GLOBAL->GRXSTSP;
+
+    /* The endpoint that received the data */
+    uint8_t  endpoint_number = _FLD2VAL(USB_OTG_GRXSTSP_EPNUM, rx_status);
+    /* The count of bytes in the received packet */
+    uint16_t byte_count = _FLD2VAL(USB_OTG_GRXSTSP_BCNT, rx_status);
+    /* The status of the received packet */
+    uint16_t packet_status = _FLD2VAL(USB_OTG_GRXSTSP_PKTSTS, rx_status);
+
+    switch(packet_status)
+    {
+        /* SETUP packet (includes data) */
+        case 0x06:
+            break;
+        /* OUT packet (includes data) */
+        case 0x02:
+            break;
+        /* SETUP stage has completed */
+        case 0x04:
+        /* OUT transfer has completed */
+        case 0x03:
+            /* Re-enables the tx on teh endpoint */
+            SET_BIT(OUT_ENDPOINT(endpoint_number)->DOEPCTL,
+                    USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
+            break;
+        default:
+            break;
+    }
 }

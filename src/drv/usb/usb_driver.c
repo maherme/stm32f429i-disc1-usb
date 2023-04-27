@@ -138,7 +138,7 @@ static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
  * @param[in] size is the counting of bytes to be popped from the dedicated RxFIFO memory.
  * @return void
  */
-static void USB_Read_Packet(void* buffer, uint16_t size);
+static void USB_Read_Packet(const void* buffer, uint16_t size);
 
 /**
  * @brief Function for pushing a packet into the TxFIFO of an IN endpoint.
@@ -445,7 +445,7 @@ static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
     USB_Configure_TxFIFO_Size(endpoint_number, endpoint_size);
 }
 
-static void USB_Read_Packet(void* buffer, uint16_t size)
+static void USB_Read_Packet(const void* buffer, uint16_t size)
 {
     uint32_t* fifo = (uint32_t*)FIFO(0);
 

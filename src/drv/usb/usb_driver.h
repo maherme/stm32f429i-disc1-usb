@@ -34,7 +34,7 @@ typedef struct
     void(*USB_Configure_IN_Endpoint)(uint8_t endpoint_number,
                                     USBEndpointType_t endpoint_type,
                                     uint16_t endpoint_size);
-    void(*USB_Read_Packet)(void* buffer, uint16_t size);
+    void(*USB_Read_Packet)(const void* buffer, uint16_t size);
     void(*USB_Write_Packet)(uint8_t endpoint_number, void const* buffer, uint16_t size);
     void(*USB_Poll)(void);
 }USB_Driver_t;

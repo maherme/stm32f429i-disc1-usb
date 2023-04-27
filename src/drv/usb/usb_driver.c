@@ -4,16 +4,6 @@
 * @brief File containing the APIs for USB driver.
 *
 * Public Functions:
-*       - void USB_Init(void)
-*       - void USB_Connect(void)
-*       - void USB_Disconnect(void)
-*       - void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
-*                                        USBEndpointType endpoint_type,
-*                                        uint16_t endpoint_size)
-*       - void USB_Read_Packet(void* buffer, uint16_t size)
-*       - void USB_Write_Packet(uint8_t endpoint_number, void const* buffer, uint16_t size)
-*       - void USB_Flush_RxFIFO(void)
-*       - void USB_Flush_TxFIFO(uint8_t endpoint_number)
 *
 * @note
 *       For further information about functions refer to the corresponding header file.
@@ -106,181 +96,98 @@ static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void);
  */
 static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(void);
 
+/**
+ * @brief Function for initializing the USB peripheral.
+ * @return void.
+ */
+static void USB_Init(void);
+
+/**
+ * @brief Function for setting the device address.
+ * @param[in] address is the address of the device.
+ * @return void.
+ */
+static void USB_Set_Device_Address(uint8_t address);
+
+/**
+ * @brief Function for connecting the USB peripheral to the bus.
+ * @return void.
+ */
+static void USB_Connect(void);
+
+/**
+ * @brief Function for disconnecting the USB peripheral to the bus.
+ * @return void.
+ */
+static void USB_Disconnect(void);
+
+/**
+ * @brief Function for configuring an IN endpoint
+ * @param[in] endpoint_number is the number of the endpoint to configure.
+ * @param[in] endpoint_type is the type of endpoint to configure.
+ * @param[in] endpoint_size is the size of the endpoint to configure.
+ * @return void
+ */
+static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
+                                      USBEndpointType_t endpoint_type,
+                                      uint16_t endpoint_size);
+
+/**
+ * @brief Function for popping data from the RxFIFO and storing it in a buffer.
+ * @param[in] buffer is a pointer to a buffer, in which the popped data will be stored.
+ * @param[in] size is the counting of bytes to be popped from the dedicated RxFIFO memory.
+ * @return void
+ */
+static void USB_Read_Packet(void* buffer, uint16_t size);
+
+/**
+ * @brief Function for pushing a packet into the TxFIFO of an IN endpoint.
+ * @param[in] endpoint_number is the number of the endpoint to which the data will be written.
+ * @param[in] buffer is a pointer to the buffer containing the data to be written to the endpoint.
+ * @param[in] size is the size of data to be written in bytes.
+ * @return void
+ */
+static void USB_Write_Packet(uint8_t endpoint_number, void const* buffer, uint16_t size);
+
+/**
+ * @brief Function for flushing the RxFIFO of all OUT endpoints.
+ * @return void
+ */
+static void USB_Flush_RxFIFO(void);
+
+/**
+ * @brief Function for flushing the TxFIFO of an IN endpoint.
+ * @param[in] endpoint_number is the number of an IN endpoint to flush its FIFO.
+ * @return void
+ */
+static void USB_Flush_TxFIFO(uint8_t endpoint_number);
+
+/**
+ * @brief Function for managing the USB interrupt events.
+ * @return void
+ */
+static void USB_IRQ_Handler(void);
+
+/***********************************************************************************************************/
+/*                                       Global Variables                                                  */
+/***********************************************************************************************************/
+
+const USB_Driver_t USB_driver = {
+    .USB_Init = &USB_Init,
+    .USB_Set_Device_Address = &USB_Set_Device_Address,
+    .USB_Connect = &USB_Connect,
+    .USB_Disconnect = &USB_Disconnect,
+    .USB_Flush_RxFIFO = &USB_Flush_RxFIFO,
+    .USB_Flush_TxFIFO = &USB_Flush_TxFIFO,
+    .USB_Configure_IN_Endpoint = &USB_Configure_IN_Endpoint,
+    .USB_Read_Packet = &USB_Read_Packet,
+    .USB_Write_Packet = &USB_Write_Packet,
+    .USB_Poll = &USB_IRQ_Handler
+};
+
 /***********************************************************************************************************/
 /*                                       Public API Definitions                                            */
 /***********************************************************************************************************/
-
-void USB_Init(void)
-{
-    /* Enable the clock */
-    SET_BIT(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSEN);
-
-    /* Configure the USB core for running in device mode and using the embedded full-speed PHY */
-    MODIFY_REG(
-        USB_OTG_HS->GUSBCFG,
-        USB_OTG_GUSBCFG_FDMOD | USB_OTG_GUSBCFG_PHYSEL | USB_OTG_GUSBCFG_TRDT,
-        USB_OTG_GUSBCFG_FDMOD | USB_OTG_GUSBCFG_PHYSEL | _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x09)
-    );
-
-    /* Configure for running in full speed mode */
-    MODIFY_REG(USB_OTG_HS_DEVICE->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x03));
-
-    /* Enable VBUS sensing device */
-    SET_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_VBUSBSEN);
-
-    /* Unmask USB core interrupts */
-    SET_BIT(
-        USB_OTG_HS->GINTMSK,
-        USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM | USB_OTG_GINTMSK_SOFM |
-        USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_WUIM | USB_OTG_GINTMSK_IEPINT |
-        USB_OTG_GINTSTS_OEPINT | USB_OTG_GINTMSK_RXFLVLM
-    );
-
-    /* Clear pending interrupts */
-    WRITE_REG(USB_OTG_HS->GINTSTS, 0xFFFFFFFF);
-
-    /* Unmask USB global interrupt */
-    SET_BIT(USB_OTG_HS->GAHBCFG, USB_OTG_GAHBCFG_GINT);
-
-    /* Unmask tx completed interrupt for all endpoints */
-    SET_BIT(USB_OTG_HS_DEVICE->DOEPMSK, USB_OTG_DOEPMSK_XFRCM);
-    SET_BIT(USB_OTG_HS_DEVICE->DIEPMSK, USB_OTG_DIEPMSK_XFRCM);
-}
-
-void USB_Connect(void)
-{
-    /* Power the transceiver on */
-    SET_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_PWRDWN);
-
-    /* Connect the device to the bus */
-    CLEAR_BIT(USB_OTG_HS_DEVICE->DCTL, USB_OTG_DCTL_SDIS);
-}
-
-void USB_Disconnect(void)
-{
-    /* Disconnect the device to the bus */
-    SET_BIT(USB_OTG_HS_DEVICE->DCTL, USB_OTG_DCTL_SDIS);
-
-    /* Power the transceiver off */
-    CLEAR_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_PWRDWN);
-}
-
-void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
-                               USBEndpointType endpoint_type,
-                               uint16_t endpoint_size)
-{
-    /* Unmask all interrupts of the IN endpoint */
-    SET_BIT(USB_OTG_HS_DEVICE->DAINTMSK, 1 << endpoint_number);
-
-    /* Activate the endpoint, set endpoint handshake to NAK (not ready to send data), set DATA0 packet
-       configures its type, its maximum packet size and assigns it a TxFIFO */
-    MODIFY_REG(
-        IN_ENDPOINT(endpoint_number)->DIEPCTL,
-        USB_OTG_DIEPCTL_MPSIZ | USB_OTG_DIEPCTL_EPTYP | USB_OTG_DIEPCTL_TXFNUM,
-        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) | USB_OTG_DIEPCTL_SNAK |
-        _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) | _VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, endpoint_number) |
-        USB_OTG_DIEPCTL_SD0PID_SEVNFRM
-    );
-
-    USB_Configure_TxFIFO_Size(endpoint_number, endpoint_size);
-}
-
-void USB_Read_Packet(void* buffer, uint16_t size)
-{
-    uint32_t* fifo = (uint32_t*)FIFO(0);
-
-    for(; size >= 4; size -= 4, buffer += 4){
-        /* Pops one 32 bit word of data (until there is less than one word remaining) */
-        uint32_t data = *fifo;
-        *((uint32_t*)buffer) = data;
-    }
-
-    if(size > 0){
-        /* Pops the last remaining bytes (which are less than one word) */
-        uint32_t data = *fifo;
-        /* Pop the last remaining bytes (which are less than one word) */
-        for(; size > 0; size--, buffer++, data >>= 8){
-            /* Store data in the buffer with the correct alignment */
-            *(uint8_t*)buffer = 0xFF & data;
-        }
-    }
-}
-
-void USB_Write_Packet(uint8_t endpoint_number, void const* buffer, uint16_t size)
-{
-    uint32_t* fifo = (uint32_t*)FIFO(endpoint_number);
-    USB_OTG_INEndpointTypeDef* in_endpoint = IN_ENDPOINT(endpoint_number);
-
-    /* Configure the tx (1 packet that has size bytes) */
-    MODIFY_REG(
-        in_endpoint->DIEPTSIZ,
-        USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
-        _VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_XFRSIZ, size)
-    );
-
-    /* Enable the tx after clearing both STALL and NAK of the endpoint */
-    MODIFY_REG(
-        in_endpoint->DIEPCTL,
-        USB_OTG_DIEPCTL_STALL,
-        USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA
-    );
-
-    /* Get the size in term of 32 bit words (to avoid integer overflow in the loop) */
-    size = (size + 3)/4;
-
-    for(; size > 0; size--, buffer += 4){
-        /* Push the data to the TxFIFO */
-        *fifo = *(uint32_t*)buffer;
-    }
-}
-
-void USB_Flush_RxFIFO(void)
-{
-    SET_BIT(USB_OTG_HS->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
-}
-
-void USB_Flush_TxFIFO(uint8_t endpoint_number)
-{
-    /* Set the number of the TxFIFO to be flushed and then triggers the flush */
-    MODIFY_REG(
-        USB_OTG_HS->GRSTCTL,
-        USB_OTG_GRSTCTL_TXFNUM,
-        _VAL2FLD(USB_OTG_GRSTCTL_TXFNUM, endpoint_number) | USB_OTG_GRSTCTL_TXFFLSH
-    );
-}
-
-void USB_IRQ_Handler(void)
-{
-    volatile uint32_t irq = USB_OTG_HS_GLOBAL->GINTSTS;
-
-    /* Reset irq */
-    if(irq & USB_OTG_GINTSTS_USBRST){
-        USB_RST_Handler();
-        /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_USBRST);
-    }
-    /* Enumeration done irq */
-    else if(irq & USB_OTG_GINTSTS_ENUMDNE){
-        USB_Enum_Done_Handler();
-        /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_ENUMDNE);
-    }
-    /* Rx-FIFO non-empty irq */
-    else if(irq & USB_OTG_GINTSTS_RXFLVL){
-        USB_RxFIFO_Non_Empty_Handler();
-        /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_RXFLVL);
-    }
-    else if(irq & USB_OTG_GINTSTS_IEPINT){
-
-    }
-    else if(irq & USB_OTG_GINTSTS_OEPINT){
-
-    }
-    else{
-        /* do nothing */
-    }
-}
 
 /***********************************************************************************************************/
 /*                                       Static Function Definitions                                       */
@@ -413,6 +320,8 @@ static inline __attribute__((always_inline)) void USB_RST_Handler(void)
     for(uint8_t i = 0; i <= USB_ENDPOINT_COUNT; i++){
         USB_Deconfigure_Endpoint(i);
     }
+
+    USB_events.USB_Reset_Received();
 }
 
 static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void)
@@ -438,6 +347,7 @@ static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(v
     {
         /* SETUP packet (includes data) */
         case 0x06:
+            USB_events.USB_Setup_Data_Received(endpoint_number, byte_count);
             break;
         /* OUT packet (includes data) */
         case 0x02:
@@ -452,5 +362,182 @@ static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(v
             break;
         default:
             break;
+    }
+}
+
+static void USB_Init(void)
+{
+    /* Enable the clock */
+    SET_BIT(RCC->AHB1ENR, RCC_AHB1ENR_OTGHSEN);
+
+    /* Configure the USB core for running in device mode and using the embedded full-speed PHY */
+    MODIFY_REG(
+        USB_OTG_HS->GUSBCFG,
+        USB_OTG_GUSBCFG_FDMOD | USB_OTG_GUSBCFG_PHYSEL | USB_OTG_GUSBCFG_TRDT,
+        USB_OTG_GUSBCFG_FDMOD | USB_OTG_GUSBCFG_PHYSEL | _VAL2FLD(USB_OTG_GUSBCFG_TRDT, 0x09)
+    );
+
+    /* Configure for running in full speed mode */
+    MODIFY_REG(USB_OTG_HS_DEVICE->DCFG, USB_OTG_DCFG_DSPD, _VAL2FLD(USB_OTG_DCFG_DSPD, 0x03));
+
+    /* Enable VBUS sensing device */
+    SET_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_VBUSBSEN);
+
+    /* Unmask USB core interrupts */
+    SET_BIT(
+        USB_OTG_HS->GINTMSK,
+        USB_OTG_GINTMSK_USBRST | USB_OTG_GINTMSK_ENUMDNEM | USB_OTG_GINTMSK_SOFM |
+        USB_OTG_GINTMSK_USBSUSPM | USB_OTG_GINTMSK_WUIM | USB_OTG_GINTMSK_IEPINT |
+        USB_OTG_GINTSTS_OEPINT | USB_OTG_GINTMSK_RXFLVLM
+    );
+
+    /* Clear pending interrupts */
+    WRITE_REG(USB_OTG_HS->GINTSTS, 0xFFFFFFFF);
+
+    /* Unmask USB global interrupt */
+    SET_BIT(USB_OTG_HS->GAHBCFG, USB_OTG_GAHBCFG_GINT);
+
+    /* Unmask tx completed interrupt for all endpoints */
+    SET_BIT(USB_OTG_HS_DEVICE->DOEPMSK, USB_OTG_DOEPMSK_XFRCM);
+    SET_BIT(USB_OTG_HS_DEVICE->DIEPMSK, USB_OTG_DIEPMSK_XFRCM);
+}
+
+static void USB_Set_Device_Address(uint8_t address)
+{
+    MODIFY_REG(USB_OTG_HS_DEVICE->DCFG, USB_OTG_DCFG_DAD, _VAL2FLD(USB_OTG_DCFG_DAD, address));
+}
+
+static void USB_Connect(void)
+{
+    /* Power the transceiver on */
+    SET_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_PWRDWN);
+
+    /* Connect the device to the bus */
+    CLEAR_BIT(USB_OTG_HS_DEVICE->DCTL, USB_OTG_DCTL_SDIS);
+}
+
+static void USB_Disconnect(void)
+{
+    /* Disconnect the device to the bus */
+    SET_BIT(USB_OTG_HS_DEVICE->DCTL, USB_OTG_DCTL_SDIS);
+
+    /* Power the transceiver off */
+    CLEAR_BIT(USB_OTG_HS->GCCFG, USB_OTG_GCCFG_PWRDWN);
+}
+
+static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
+                               USBEndpointType_t endpoint_type,
+                               uint16_t endpoint_size)
+{
+    /* Unmask all interrupts of the IN endpoint */
+    SET_BIT(USB_OTG_HS_DEVICE->DAINTMSK, 1 << endpoint_number);
+
+    /* Activate the endpoint, set endpoint handshake to NAK (not ready to send data), set DATA0 packet
+       configures its type, its maximum packet size and assigns it a TxFIFO */
+    MODIFY_REG(
+        IN_ENDPOINT(endpoint_number)->DIEPCTL,
+        USB_OTG_DIEPCTL_MPSIZ | USB_OTG_DIEPCTL_EPTYP | USB_OTG_DIEPCTL_TXFNUM,
+        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) | USB_OTG_DIEPCTL_SNAK |
+        _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) | _VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, endpoint_number) |
+        USB_OTG_DIEPCTL_SD0PID_SEVNFRM
+    );
+
+    USB_Configure_TxFIFO_Size(endpoint_number, endpoint_size);
+}
+
+static void USB_Read_Packet(void* buffer, uint16_t size)
+{
+    uint32_t* fifo = (uint32_t*)FIFO(0);
+
+    for(; size >= 4; size -= 4, buffer += 4){
+        /* Pops one 32 bit word of data (until there is less than one word remaining) */
+        uint32_t data = *fifo;
+        *((uint32_t*)buffer) = data;
+    }
+
+    if(size > 0){
+        /* Pops the last remaining bytes (which are less than one word) */
+        uint32_t data = *fifo;
+        /* Pop the last remaining bytes (which are less than one word) */
+        for(; size > 0; size--, buffer++, data >>= 8){
+            /* Store data in the buffer with the correct alignment */
+            *(uint8_t*)buffer = 0xFF & data;
+        }
+    }
+}
+
+static void USB_Write_Packet(uint8_t endpoint_number, void const* buffer, uint16_t size)
+{
+    uint32_t* fifo = (uint32_t*)FIFO(endpoint_number);
+    USB_OTG_INEndpointTypeDef* in_endpoint = IN_ENDPOINT(endpoint_number);
+
+    /* Configure the tx (1 packet that has size bytes) */
+    MODIFY_REG(
+        in_endpoint->DIEPTSIZ,
+        USB_OTG_DIEPTSIZ_PKTCNT | USB_OTG_DIEPTSIZ_XFRSIZ,
+        _VAL2FLD(USB_OTG_DIEPTSIZ_PKTCNT, 1) | _VAL2FLD(USB_OTG_DIEPTSIZ_XFRSIZ, size)
+    );
+
+    /* Enable the tx after clearing both STALL and NAK of the endpoint */
+    MODIFY_REG(
+        in_endpoint->DIEPCTL,
+        USB_OTG_DIEPCTL_STALL,
+        USB_OTG_DIEPCTL_CNAK | USB_OTG_DIEPCTL_EPENA
+    );
+
+    /* Get the size in term of 32 bit words (to avoid integer overflow in the loop) */
+    size = (size + 3)/4;
+
+    for(; size > 0; size--, buffer += 4){
+        /* Push the data to the TxFIFO */
+        *fifo = *(uint32_t*)buffer;
+    }
+}
+
+static void USB_Flush_RxFIFO(void)
+{
+    SET_BIT(USB_OTG_HS->GRSTCTL, USB_OTG_GRSTCTL_RXFFLSH);
+}
+
+static void USB_Flush_TxFIFO(uint8_t endpoint_number)
+{
+    /* Set the number of the TxFIFO to be flushed and then triggers the flush */
+    MODIFY_REG(
+        USB_OTG_HS->GRSTCTL,
+        USB_OTG_GRSTCTL_TXFNUM,
+        _VAL2FLD(USB_OTG_GRSTCTL_TXFNUM, endpoint_number) | USB_OTG_GRSTCTL_TXFFLSH
+    );
+}
+
+static void USB_IRQ_Handler(void)
+{
+    volatile uint32_t irq = USB_OTG_HS_GLOBAL->GINTSTS;
+
+    /* Reset irq */
+    if(irq & USB_OTG_GINTSTS_USBRST){
+        USB_RST_Handler();
+        /* Clear irq */
+        SET_BIT(irq, USB_OTG_GINTSTS_USBRST);
+    }
+    /* Enumeration done irq */
+    else if(irq & USB_OTG_GINTSTS_ENUMDNE){
+        USB_Enum_Done_Handler();
+        /* Clear irq */
+        SET_BIT(irq, USB_OTG_GINTSTS_ENUMDNE);
+    }
+    /* Rx-FIFO non-empty irq */
+    else if(irq & USB_OTG_GINTSTS_RXFLVL){
+        USB_RxFIFO_Non_Empty_Handler();
+        /* Clear irq */
+        SET_BIT(irq, USB_OTG_GINTSTS_RXFLVL);
+    }
+    else if(irq & USB_OTG_GINTSTS_IEPINT){
+
+    }
+    else if(irq & USB_OTG_GINTSTS_OEPINT){
+
+    }
+    else{
+        /* do nothing */
     }
 }

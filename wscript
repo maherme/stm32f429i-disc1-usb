@@ -10,14 +10,18 @@ source_files = [
     'src/systeminit.c',
     'src/main.c',
     'src/hlp/logger.c',
-    'src/drv/usb/usb_driver.c'
+    'src/drv/usb/usb_driver.c',
+    'src/drv/gpio/gpio_driver.c',
+    'src/mid/usb/usb_middleware.c'
 ]
 include_path = [
     'inc/CMSIS/Device/ST/STM32F4xx/Include',
     'inc/CMSIS/Include',
     'src',
     'src/hlp',
-    'src/drv/usb'
+    'src/drv/usb',
+    'src/drv/gpio',
+    'src/mid/usb'
 ]
 
 def configure(cnf):

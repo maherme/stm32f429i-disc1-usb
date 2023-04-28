@@ -45,6 +45,12 @@ static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t by
 static void USB_Polled_Handler(void);
 
 /**
+ * @brief Function for completing an IN transfer.
+ * @return void
+ */
+static void USB_In_Transfer_Completed_Handler(void);
+
+/**
  * @brief Function for processing a received request.
  * @return void
  */
@@ -61,7 +67,8 @@ static void process_control_transfer_stage(void);
 USB_Events_t USB_events = {
     .USB_Reset_Received = &USB_Reset_Received_Handler,
     .USB_Setup_Data_Received = &USB_Setup_Data_Received_Handler,
-    .USB_Polled = &USB_Polled_Handler
+    .USB_Polled = &USB_Polled_Handler,
+    .USB_In_Transfer_Completed = &USB_In_Transfer_Completed_Handler
 };
 
 /***********************************************************************************************************/
@@ -104,6 +111,14 @@ static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t by
 static void USB_Polled_Handler(void)
 {
     process_control_transfer_stage();
+}
+
+static void USB_In_Transfer_Completed_Handler(void)
+{
+    if(usb_device_handle->in_data_size){
+        log_info("Switching to IN-DATA stage");
+        usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_DATA_IN;
+    }
 }
 
 static void process_request(void)

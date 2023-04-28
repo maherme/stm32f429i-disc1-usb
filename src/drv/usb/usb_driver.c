@@ -13,6 +13,7 @@
 #include "logger.h"
 #include "stm32f4xx.h"
 #include <stdint.h>
+#include <strings.h>
 
 /***********************************************************************************************************/
 /*                                       Static Function Prototypes                                        */
@@ -379,12 +380,26 @@ static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(v
 
 static inline __attribute__((always_inline)) void USB_In_Endpoint_Interrupt_Handler(void)
 {
+    /* Find the endpoint which caused the interrupt */
+    uint8_t endpoint_number = ffs(USB_OTG_HS_DEVICE->DAINT) - 1;
 
+    if(IN_ENDPOINT(endpoint_number)->DIEPINT & USB_OTG_DIEPINT_XFRC){
+        USB_events.USB_In_Transfer_Completed(endpoint_number);
+        /* Clear interrupt flag */
+        SET_BIT(IN_ENDPOINT(endpoint_number)->DIEPINT, USB_OTG_DIEPINT_XFRC);
+    }
 }
 
 static inline __attribute__((always_inline)) void USB_Out_Endpoint_Interrupt_Handler(void)
 {
+    /* Find the endpoint which caused the interrupt */
+    uint8_t endpoint_number = ffs(USB_OTG_HS_DEVICE->DAINT >> 16) - 1;
 
+    if(OUT_ENDPOINT(endpoint_number)->DOEPINT & USB_OTG_DOEPINT_XFRC){
+        USB_events.USB_Out_Transfer_Completed(endpoint_number);
+        /* Clear interrupt flag */
+        SET_BIT(OUT_ENDPOINT(endpoint_number)->DOEPINT, USB_OTG_DOEPINT_XFRC);
+    }
 }
 
 static void USB_Init(void)

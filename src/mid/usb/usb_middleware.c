@@ -13,7 +13,10 @@
 
 #include "usb_middleware.h"
 #include "usb_driver.h"
+#include "usb_device_descriptor.h"
+#include "usb_standards.h"
 #include "logger.h"
+#include <stdint.h>
 
 /***********************************************************************************************************/
 /*                                       Static Variables                                                  */
@@ -39,11 +42,17 @@ static void USB_Reset_Received_Handler(void);
  */
 static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t byte_cnt);
 
+static void USB_Polled_Handler(void);
+
 /**
  * @brief Function for processing a received request.
  * @return void
  */
 static void process_request(void);
+
+static void process_standard_device_request(const USB_Request_t* request);
+
+static void process_control_transfer_stage(void);
 
 /***********************************************************************************************************/
 /*                                       Global Variables                                                  */
@@ -51,7 +60,8 @@ static void process_request(void);
 
 USB_Events_t USB_events = {
     .USB_Reset_Received = &USB_Reset_Received_Handler,
-    .USB_Setup_Data_Received = &USB_Setup_Data_Received_Handler
+    .USB_Setup_Data_Received = &USB_Setup_Data_Received_Handler,
+    .USB_Polled = &USB_Polled_Handler
 };
 
 /***********************************************************************************************************/
@@ -83,6 +93,7 @@ static void USB_Reset_Received_Handler(void)
     usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_SETUP;
     USB_driver.USB_Set_Device_Address(0);
 }
+
 static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t byte_cnt)
 {
     USB_driver.USB_Read_Packet(usb_device_handle->ptr_out_buffer, byte_cnt);
@@ -90,7 +101,71 @@ static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t by
     process_request();
 }
 
+static void USB_Polled_Handler(void)
+{
+    process_control_transfer_stage();
+}
+
 static void process_request(void)
 {
+    const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
 
+    switch(request->bmRequestType & (USB_BM_REQUEST_TYPE_TYPE_MASK | USB_BM_REQUEST_TYPE_RECIPIENT_MASK)){
+        case USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIPIENT_DEVICE:
+            break;
+        default:
+            /* do nothing */
+            break;
+    }
+}
+
+static void process_standard_device_request(const USB_Request_t* request)
+{
+    const uint8_t descriptor_type = request->wValue >> 8;
+    const uint16_t descriptor_length = request->wLength;
+
+    switch(request->bRequest){
+        case USB_STANDARD_GET_DESCRIPTOR:
+            log_info("Standard Get Descriptor request received");
+            switch(descriptor_type){
+                case USB_DESCRIPTOR_TYPE_DEVICE:
+                    log_info("- Get Device Descriptor");
+                    usb_device_handle->ptr_in_buffer = &device_descriptor;
+                    usb_device_handle->in_data_size = descriptor_length;
+                    log_info("Switching control stage to IN-DATA");
+                    usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_DATA_IN;
+                    break;
+                default:
+                    /* do nothing */
+                    break;
+            }
+            break;
+        default:
+            /* do nothing */
+            break;
+    }
+}
+
+static void process_control_transfer_stage(void)
+{
+    uint8_t data_size = device_descriptor.bMaxPacketSize0;
+
+    switch(usb_device_handle->control_transfer_stage){
+        case USB_CONTROL_STAGE_SETUP:
+            /* do nothing */
+            break;
+        case USB_CONTROL_STAGE_DATA_IN:
+            log_info("Processing IN-DATA stage");
+            USB_driver.USB_Write_Packet(0, usb_device_handle->ptr_in_buffer, data_size);
+            usb_device_handle->in_data_size -= data_size;
+            usb_device_handle->ptr_in_buffer += data_size;
+            usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_DATA_IN_IDLE;
+            break;
+        case USB_CONTROL_STAGE_DATA_IN_IDLE:
+            /* do nothing */
+            break;
+        default:
+            /* do nothing */
+            break;
+    }
 }

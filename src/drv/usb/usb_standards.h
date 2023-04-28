@@ -30,6 +30,76 @@
 /** @} */
 
 /**
+ * @name USB standard requests.
+ * @{
+ */
+#define USB_STANDARD_GET_STATUS         0x00
+#define USB_STANDARD_CLEAR_FEATURE      0x01
+#define USB_STANDARD_SET_FEATURE        0x03
+#define USB_STANDARD_SET_ADDRESS        0x05
+#define USB_STANDARD_GET_DESCRIPTOR     0x06
+#define USB_STANDARD_SET_DESCRIPTOR     0x07
+#define USB_STANDARD_GET_CONFIG         0x08
+#define USB_STANDARD_SET_CONFIG         0x09
+#define USB_STANDARD_GET_INTERFACE      0x0A
+#define USB_STANDARD_SET_INTERFACE      0x0B
+#define USB_STANDARD_SYNCH_FRAME        0x0C
+/** @} */
+
+/**
+ * @name USB standard descriptor types.
+ * @{
+ */
+#define USB_DESCRIPTOR_TYPE_DEVICE          0x01
+#define USB_DESCRIPTOR_TYPE_CONFIGURATION   0x02
+#define USB_DESCRIPTOR_TYPE_STRING          0x03
+#define USB_DESCRIPTOR_TYPE_INTERFACE       0x04
+#define USB_DESCRIPTOR_TYPE_ENDPOINT        0x05
+#define USB_DESCRIPTOR_TYPE_QUALIFIER       0x06
+#define USB_DESCRIPTOR_TYPE_OTHER           0x07
+#define USB_DESCRIPTOR_TYPE_INTERFACEPOWER  0x08
+#define USB_DESCRIPTOR_TYPE_OTG             0x09
+#define USB_DESCRIPTOR_TYPE_DEBUG           0x0A
+#define USB_DESCRIPTOR_TYPE_INTERFACEASSOC  0x0B
+#define USB_DESCRIPTOR_TYPE_CS_INTERFACE    0x24
+#define USB_DESCRIPTOR_TYPE_CS_ENDPOINT     0x25
+/** @} */
+
+/**
+ * @name USB classes.
+ * @{
+ */
+#define USB_CLASS_PER_INTERFACE 0x00
+#define USB_CLASS_AUDIO         0x01
+#define USB_CLASS_PHYSICAL      0x05
+#define USB_CLASS_STILL_IMAGE   0x06
+#define USB_CLASS_PRINTER       0x07
+#define USB_CLASS_MASS_STORAGE  0x08
+#define USB_CLASS_HUB           0x09
+#define USB_CLASS_CSCID         0x0B
+#define USB_CLASS_CONTENT_SEC   0x0D
+#define USB_CLASS_VIDEO         0x0E
+#define USB_CLASS_HEALTHCARE    0x0F
+#define USB_CLASS_AV            0x10
+#define USB_CLASS_BILLBOARD     0x11
+#define USB_CLASS_CBRIDGE       0x12
+#define USB_CLASS_DIAGNOSTIC    0xDC
+#define USB_CLASS_WIRELESS      0xE0
+#define USB_CLASS_MISC          0xEF
+#define USB_CLASS_IAD           0xEF
+#define USB_CLASS_APP_SPEC      0xFE
+#define USB_CLASS_VENDOR        0xFF
+
+#define USB_SUBCLASS_NONE       0x00
+#define USB_SUBCLASS_IAD        0x02
+#define USB_SUBCLASS_VENDOR     0xFF
+
+#define USB_PROTOCOL_NONE       0x00
+#define USB_PROTOCOL_IAD        0x01
+#define USB_PROTOCOL_VENDOR     0xFF
+/** @} */
+
+/**
  * @brief List of endpoint types.
  */
 typedef enum
@@ -89,5 +159,26 @@ typedef struct
     uint16_t wIndex;
     uint16_t wLength;
 }USB_Request_t;
+
+/**
+ * @brief Struct which the USB standard device dercriptor fields.
+ */
+typedef struct
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint16_t bcdUSB;
+    uint8_t bDeviceClass;
+    uint8_t bDeviceSubClass;
+    uint8_t bDeviceProtocol;
+    uint8_t bMaxPacketSize0;
+    uint16_t idVendor;
+    uint16_t idProduct;
+    uint16_t bcdDevice;
+    uint8_t iManufacturer;
+    uint8_t iProduct;
+    uint8_t iSerialNumber;
+    uint8_t bNumConfigurations;
+}USB_StdDeviceDescriptor_t;
 
 #endif /* USB_STANDARDS_H */

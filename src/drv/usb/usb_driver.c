@@ -97,6 +97,18 @@ static inline __attribute__((always_inline)) void USB_Enum_Done_Handler(void);
 static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(void);
 
 /**
+ * @brief Function for managing the in endpoint interrupt of the USB peripheral.
+ * @return void
+ */
+static inline __attribute__((always_inline)) void USB_In_Endpoint_Interrupt_Handler(void);
+
+/**
+ * @brief Function for managing the out endpoint interrupt of the USB peripheral.
+ * @return void
+ */
+static inline __attribute__((always_inline)) void USB_Out_Endpoint_Interrupt_Handler(void);
+
+/**
  * @brief Function for initializing the USB peripheral.
  * @return void.
  */
@@ -365,6 +377,16 @@ static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(v
     }
 }
 
+static inline __attribute__((always_inline)) void USB_In_Endpoint_Interrupt_Handler(void)
+{
+
+}
+
+static inline __attribute__((always_inline)) void USB_Out_Endpoint_Interrupt_Handler(void)
+{
+
+}
+
 static void USB_Init(void)
 {
     /* Enable the clock */
@@ -517,27 +539,33 @@ static void USB_IRQ_Handler(void)
     if(irq & USB_OTG_GINTSTS_USBRST){
         USB_RST_Handler();
         /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_USBRST);
+        SET_BIT(USB_OTG_HS_GLOBAL->GINTSTS, USB_OTG_GINTSTS_USBRST);
     }
     /* Enumeration done irq */
     else if(irq & USB_OTG_GINTSTS_ENUMDNE){
         USB_Enum_Done_Handler();
         /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_ENUMDNE);
+        SET_BIT(USB_OTG_HS_GLOBAL->GINTSTS, USB_OTG_GINTSTS_ENUMDNE);
     }
     /* Rx-FIFO non-empty irq */
     else if(irq & USB_OTG_GINTSTS_RXFLVL){
         USB_RxFIFO_Non_Empty_Handler();
         /* Clear irq */
-        SET_BIT(irq, USB_OTG_GINTSTS_RXFLVL);
+        SET_BIT(USB_OTG_HS_GLOBAL->GINTSTS, USB_OTG_GINTSTS_RXFLVL);
     }
     else if(irq & USB_OTG_GINTSTS_IEPINT){
-
+        USB_In_Endpoint_Interrupt_Handler();
+        /* Clear irq */
+        SET_BIT(USB_OTG_HS_GLOBAL->GINTSTS, USB_OTG_GINTSTS_IEPINT);
     }
     else if(irq & USB_OTG_GINTSTS_OEPINT){
-
+        USB_Out_Endpoint_Interrupt_Handler();
+        /* Clear irq */
+        SET_BIT(USB_OTG_HS_GLOBAL->GINTSTS, USB_OTG_GINTSTS_OEPINT);
     }
     else{
         /* do nothing */
     }
+
+    USB_events.USB_Polled();
 }

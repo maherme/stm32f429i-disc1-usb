@@ -27,4 +27,15 @@ const USB_StdDeviceDescriptor_t device_descriptor = {
     .bNumConfigurations = 1
 };
 
+typedef struct
+{
+    USB_StdCfgDescriptor_t usb_configuration_descriptor;
+}USB_CfgDescriptorCombination_t;
+
+const USB_CfgDescriptorCombination_t cfg_descriptor_combination = {
+    .usb_configuration_descriptor = {
+
+    }
+};
+
 #endif /* USB_DEVICE_DESCRIPTOR_H */

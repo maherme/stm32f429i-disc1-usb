@@ -144,7 +144,7 @@ typedef struct
     void(*USB_Setup_Data_Received)(uint8_t endpoint_number, uint16_t byte_cnt);
     void(*USB_Out_Data_Received)(uint8_t endpoint_number, uint16_t bcnt);
     void(*USB_In_Transfer_Completed)(void);
-    void(*USB_Out_Transfer_Completed)(uint8_t endpoint_number);
+    void(*USB_Out_Transfer_Completed)(void);
     void(*USB_Polled)(void);
 }USB_Events_t;
 
@@ -180,5 +180,17 @@ typedef struct
     uint8_t iSerialNumber;
     uint8_t bNumConfigurations;
 }USB_StdDeviceDescriptor_t;
+
+typedef struct
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint16_t wTotalLength;
+    uint8_t bNumInterfaces;
+    uint8_t bConfigurationValue;
+    uint8_t iConfiguration;
+    uint8_t bmAttributes;
+    uint8_t bMaxPower;
+}USB_StdCfgDescriptor_t;
 
 #endif /* USB_STANDARDS_H */

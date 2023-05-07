@@ -396,7 +396,7 @@ static inline __attribute__((always_inline)) void USB_Out_Endpoint_Interrupt_Han
     uint8_t endpoint_number = ffs(USB_OTG_HS_DEVICE->DAINT >> 16) - 1;
 
     if(OUT_ENDPOINT(endpoint_number)->DOEPINT & USB_OTG_DOEPINT_XFRC){
-        USB_events.USB_Out_Transfer_Completed(endpoint_number);
+        USB_events.USB_Out_Transfer_Completed();
         /* Clear interrupt flag */
         SET_BIT(OUT_ENDPOINT(endpoint_number)->DOEPINT, USB_OTG_DOEPINT_XFRC);
     }

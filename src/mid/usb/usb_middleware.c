@@ -230,7 +230,7 @@ static void process_standard_device_request(const USB_Request_t* request)
             USB_Device_Configure();
             usb_device_handle->device_state = USB_DEVICE_STATE_CONFIGURED;
             log_info("Switching control transfer state to IN-STATUS");
-            usb_device_handle->configuration_value = USB_CONTROL_STAGE_STATUS_IN;
+            usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_STATUS_IN;
             break;
         default:
             /* do nothing */

@@ -71,6 +71,7 @@
  */
 #define USB_CLASS_PER_INTERFACE 0x00
 #define USB_CLASS_AUDIO         0x01
+#define USB_CLASS_HID           0x03
 #define USB_CLASS_PHYSICAL      0x05
 #define USB_CLASS_STILL_IMAGE   0x06
 #define USB_CLASS_PRINTER       0x07
@@ -179,7 +180,7 @@ typedef struct
     uint8_t iProduct;
     uint8_t iSerialNumber;
     uint8_t bNumConfigurations;
-}USB_StdDeviceDescriptor_t;
+} __attribute__((__packed__)) USB_StdDeviceDescriptor_t;
 
 typedef struct
 {
@@ -191,6 +192,29 @@ typedef struct
     uint8_t iConfiguration;
     uint8_t bmAttributes;
     uint8_t bMaxPower;
-}USB_StdCfgDescriptor_t;
+} __attribute__((__packed__)) USB_StdCfgDescriptor_t;
+
+typedef struct
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bInterfaceNumber;
+    uint8_t bAlternateSetting;
+    uint8_t bNumEndpoints;
+    uint8_t bInterfaceClass;
+    uint8_t bInterfaceSubClass;
+    uint8_t bInterfaceProtocol;
+    uint8_t iInterface;
+} __attribute__((__packed__)) USB_InterfaceDescriptor_t;
+
+typedef struct
+{
+    uint8_t bLength;
+    uint8_t bDescriptorType;
+    uint8_t bEndpointAddress;
+    uint8_t bmAttributes;
+    uint16_t wMaxPacketSize;
+    uint8_t bInterval;
+} __attribute__((__packed__)) USB_EndpointDescriptor_t;
 
 #endif /* USB_STANDARDS_H */

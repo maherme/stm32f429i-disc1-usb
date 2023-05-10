@@ -15,6 +15,7 @@
 #include "usb_driver.h"
 #include "usb_device_descriptor.h"
 #include "usb_standards.h"
+#include "usb_hid.h"
 #include "logger.h"
 #include "helper_math.h"
 #include <stdint.h>
@@ -58,6 +59,8 @@ static void USB_In_Transfer_Completed_Handler(void);
  */
 static void USB_Out_Transfer_Completed_Handler(void);
 
+static void USB_Device_Configure(void);
+
 /**
  * @brief Function for processing a received request.
  * @return void
@@ -65,6 +68,10 @@ static void USB_Out_Transfer_Completed_Handler(void);
 static void process_request(void);
 
 static void process_standard_device_request(const USB_Request_t* request);
+
+static void process_class_interface_request(void);
+
+static void process_standard_interface_request(void);
 
 static void process_control_transfer_stage(void);
 
@@ -140,6 +147,22 @@ static void USB_Out_Transfer_Completed_Handler(void)
     /* To be defined */
 }
 
+static void USB_Device_Configure(void)
+{
+    USB_driver.USB_Configure_IN_Endpoint(
+        (cfg_descriptor_combination.usb_mouse_endpoint_descriptor.bEndpointAddress & 0x0F),
+        (cfg_descriptor_combination.usb_mouse_endpoint_descriptor.bmAttributes & 0x03),
+        cfg_descriptor_combination.usb_mouse_endpoint_descriptor.wMaxPacketSize
+    );
+
+    /* For confirming the configuration send a status IN packet (view reference manual) */
+    USB_driver.USB_Write_Packet(
+        (cfg_descriptor_combination.usb_mouse_endpoint_descriptor.bEndpointAddress & 0x0F),
+        NULL,
+        0
+    );
+}
+
 static void process_request(void)
 {
     const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
@@ -147,6 +170,12 @@ static void process_request(void)
     switch(request->bmRequestType & (USB_BM_REQUEST_TYPE_TYPE_MASK | USB_BM_REQUEST_TYPE_RECIPIENT_MASK)){
         case USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIPIENT_DEVICE:
             process_standard_device_request(request);
+            break;
+        case USB_BM_REQUEST_TYPE_TYPE_CLASS | USB_BM_REQUEST_TYPE_RECIPIENT_INTERFACE:
+            process_class_interface_request();
+            break;
+        case USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIPIENT_INTERFACE:
+            process_standard_interface_request();
             break;
         default:
             /* do nothing */
@@ -198,10 +227,42 @@ static void process_standard_device_request(const USB_Request_t* request)
         case USB_STANDARD_SET_CONFIG:
             log_info("Standard Set Configuration request received");
             usb_device_handle->configuration_value = request->wValue;
-//            USB_Device_Configure();
+            USB_Device_Configure();
             usb_device_handle->device_state = USB_DEVICE_STATE_CONFIGURED;
             log_info("Switching control transfer state to IN-STATUS");
             usb_device_handle->configuration_value = USB_CONTROL_STAGE_STATUS_IN;
+            break;
+        default:
+            /* do nothing */
+            break;
+    }
+}
+
+static void process_class_interface_request(void)
+{
+    const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
+
+    switch(request->bRequest){
+        case USB_HID_SETIDLE:
+            log_info("Switching control transfer stage to IN-STATUS");
+            usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_STATUS_IN;
+            break;
+        default:
+            /* do nothing */
+            break;
+    }
+}
+
+static void process_standard_interface_request(void)
+{
+    const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
+
+    switch(request->wValue >> 8){
+        case USB_DESCRIPTOR_TYPE_HID_REPORT:
+            usb_device_handle->ptr_in_buffer = &hid_report_descriptor;
+            usb_device_handle->in_data_size = sizeof(hid_report_descriptor);
+            log_info("Switching control transfer stage to IN-STATUS");
+            usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_DATA_IN;
             break;
         default:
             /* do nothing */

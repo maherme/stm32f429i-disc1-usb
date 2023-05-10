@@ -369,7 +369,7 @@ static inline __attribute__((always_inline)) void USB_RxFIFO_Non_Empty_Handler(v
         case 0x04:
         /* OUT transfer has completed */
         case 0x03:
-            /* Re-enables the tx on teh endpoint */
+            /* Re-enables the tx on the endpoint */
             SET_BIT(OUT_ENDPOINT(endpoint_number)->DOEPCTL,
                     USB_OTG_DOEPCTL_CNAK | USB_OTG_DOEPCTL_EPENA);
             break;

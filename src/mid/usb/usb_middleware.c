@@ -69,9 +69,9 @@ static void process_request(void);
 
 static void process_standard_device_request(const USB_Request_t* request);
 
-static void process_class_interface_request(void);
+static void process_class_interface_request(const USB_Request_t* request);
 
-static void process_standard_interface_request(void);
+static void process_standard_interface_request(const USB_Request_t* request);
 
 static void process_control_transfer_stage(void);
 
@@ -172,10 +172,10 @@ static void process_request(void)
             process_standard_device_request(request);
             break;
         case USB_BM_REQUEST_TYPE_TYPE_CLASS | USB_BM_REQUEST_TYPE_RECIPIENT_INTERFACE:
-            process_class_interface_request();
+            process_class_interface_request(request);
             break;
         case USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIPIENT_INTERFACE:
-            process_standard_interface_request();
+            process_standard_interface_request(request);
             break;
         default:
             /* do nothing */
@@ -238,10 +238,8 @@ static void process_standard_device_request(const USB_Request_t* request)
     }
 }
 
-static void process_class_interface_request(void)
+static void process_class_interface_request(const USB_Request_t* request)
 {
-    const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
-
     switch(request->bRequest){
         case USB_HID_SETIDLE:
             log_info("Switching control transfer stage to IN-STATUS");
@@ -253,10 +251,8 @@ static void process_class_interface_request(void)
     }
 }
 
-static void process_standard_interface_request(void)
+static void process_standard_interface_request(const USB_Request_t* request)
 {
-    const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
-
     switch(request->wValue >> 8){
         case USB_DESCRIPTOR_TYPE_HID_REPORT:
             usb_device_handle->ptr_in_buffer = &hid_report_descriptor;

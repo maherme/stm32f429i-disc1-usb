@@ -144,8 +144,8 @@ typedef struct
     void(*USB_Reset_Received)(void);
     void(*USB_Setup_Data_Received)(uint8_t endpoint_number, uint16_t byte_cnt);
     void(*USB_Out_Data_Received)(uint8_t endpoint_number, uint16_t bcnt);
-    void(*USB_In_Transfer_Completed)(void);
-    void(*USB_Out_Transfer_Completed)(void);
+    void(*USB_In_Transfer_Completed)(uint8_t endpoint_number);
+    void(*USB_Out_Transfer_Completed)(uint8_t endpoint_number);
     void(*USB_Polled)(void);
 }USB_Events_t;
 

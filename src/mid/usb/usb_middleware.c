@@ -51,13 +51,13 @@ static void USB_Polled_Handler(void);
  * @brief Function for completing an IN transfer.
  * @return void
  */
-static void USB_In_Transfer_Completed_Handler(void);
+static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number);
 
 /**
  * @brief Function for completing an OUT transfer.
  * @return void
  */
-static void USB_Out_Transfer_Completed_Handler(void);
+static void USB_Out_Transfer_Completed_Handler(uint8_t endpoint_number);
 
 static void USB_Device_Configure(void);
 
@@ -129,7 +129,7 @@ static void USB_Polled_Handler(void)
     process_control_transfer_stage();
 }
 
-static void USB_In_Transfer_Completed_Handler(void)
+static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number)
 {
     if(usb_device_handle->in_data_size){
         log_info("Switching control stage to IN-DATA");
@@ -142,7 +142,7 @@ static void USB_In_Transfer_Completed_Handler(void)
     }
 }
 
-static void USB_Out_Transfer_Completed_Handler(void)
+static void USB_Out_Transfer_Completed_Handler(uint8_t endpoint_number)
 {
     /* To be defined */
 }

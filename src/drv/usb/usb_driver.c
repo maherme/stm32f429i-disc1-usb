@@ -3,8 +3,6 @@
 *
 * @brief File containing the APIs for USB driver.
 *
-* Public Functions:
-*
 * @note
 *       For further information about functions refer to the corresponding header file.
 **/
@@ -187,6 +185,10 @@ static void USB_IRQ_Handler(void);
 /*                                       Global Variables                                          */
 /***************************************************************************************************/
 
+/**
+ * @brief Structure for managing the APIs of the driver for the USB device.
+ * @showinitializer
+ */
 const USB_Driver_t USB_driver = {
     .USB_Init = &USB_Init,
     .USB_Set_Device_Address = &USB_Set_Device_Address,
@@ -199,10 +201,6 @@ const USB_Driver_t USB_driver = {
     .USB_Write_Packet = &USB_Write_Packet,
     .USB_Poll = &USB_IRQ_Handler
 };
-
-/***************************************************************************************************/
-/*                                       Public API Definitions                                    */
-/***************************************************************************************************/
 
 /***************************************************************************************************/
 /*                                       Static Function Definitions                               */

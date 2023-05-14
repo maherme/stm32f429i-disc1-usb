@@ -1,9 +1,7 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_device_descriptor.h
 *
 * @brief Header file containing the typedef and definitions of the USB device descriptor.
-*
-* Public Functions:
 */
 
 #ifndef USB_DEVICE_DESCRIPTOR_H
@@ -37,8 +35,13 @@ typedef struct
     USB_EndpointDescriptor_t usb_mouse_endpoint_descriptor;
 }USB_CfgDescriptorCombination_t;
 
+/***************************************************************************************************/
+/*                                       Variables                                                 */
+/***************************************************************************************************/
+
 /**
  * @brief Structure implementing the device descriptor.
+ * @showinitializer
  */
 const USB_StdDeviceDescriptor_t device_descriptor = {
     .bLength = sizeof(USB_StdDeviceDescriptor_t),
@@ -59,6 +62,7 @@ const USB_StdDeviceDescriptor_t device_descriptor = {
 
 /**
  * @brief Array implementing the HID report descriptor.
+ * @showinitializer
  */
 const uint8_t hid_report_descriptor[] = {
     HID_USAGE_PAGE(HID_PAGE_DESKTOP),
@@ -91,6 +95,7 @@ const uint8_t hid_report_descriptor[] = {
 
 /**
  * @brief Structure implementing the combination of configuration descriptors.
+ * @showinitializer
  */
 const USB_CfgDescriptorCombination_t cfg_descriptor_combination = {
     .usb_configuration_descriptor = {

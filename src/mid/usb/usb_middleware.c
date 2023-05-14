@@ -1,4 +1,4 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_middleware.c
 *
 * @brief File containing the APIs for USB middleware.
@@ -21,15 +21,15 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/***********************************************************************************************************/
-/*                                       Static Variables                                                  */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Variables                                          */
+/***************************************************************************************************/
 
 static USB_Device_t* usb_device_handle;
 
-/***********************************************************************************************************/
-/*                                       Static Function Prototypes                                        */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Function Prototypes                                */
+/***************************************************************************************************/
 
 /**
  * @brief Function for managing a received reset event.
@@ -73,17 +73,37 @@ static void USB_Device_Configure(void);
  */
 static void process_request(void);
 
+/**
+ * @brief Function for processing an standard USB request.
+ * @param[in] request is a pointer to the received request.
+ * @return void
+ */
 static void process_standard_device_request(const USB_Request_t* request);
 
+/**
+ * @brief Function for processing an interface USB request.
+ * @param[in] request is a pointer to the received request.
+ * @return void
+ */
 static void process_class_interface_request(const USB_Request_t* request);
 
+/**
+ * @brief Function for processing an standard interface USB request.
+ * @param[in] request is a pointer to the received request.
+ * @return void
+ */
 static void process_standard_interface_request(const USB_Request_t* request);
 
+/**
+ * @brief Function implementing the finite state machine for controlling the transfer stages of the 
+ *        USB device.
+ * @return void
+ */
 static void process_control_transfer_stage(void);
 
-/***********************************************************************************************************/
-/*                                       Global Variables                                                  */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Global Variables                                          */
+/***************************************************************************************************/
 
 USB_Events_t USB_events = {
     .USB_Reset_Received = &USB_Reset_Received_Handler,
@@ -93,9 +113,9 @@ USB_Events_t USB_events = {
     .USB_Out_Transfer_Completed = &USB_Out_Transfer_Completed_Handler
 };
 
-/***********************************************************************************************************/
-/*                                       Public API Definitions                                            */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Public API Definitions                                    */
+/***************************************************************************************************/
 
 void USB_Device_Init(USB_Device_t* usb_device)
 {
@@ -109,9 +129,9 @@ void USB_Device_Poll(void)
     USB_driver.USB_Poll();
 }
 
-/***********************************************************************************************************/
-/*                                       Static Function Definitions                                       */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Function Definitions                               */
+/***************************************************************************************************/
 
 static void USB_Reset_Received_Handler(void)
 {
@@ -173,7 +193,8 @@ static void process_request(void)
 {
     const USB_Request_t* request = usb_device_handle->ptr_out_buffer;
 
-    switch(request->bmRequestType & (USB_BM_REQUEST_TYPE_TYPE_MASK | USB_BM_REQUEST_TYPE_RECIPIENT_MASK)){
+    switch(request->bmRequestType & 
+           (USB_BM_REQUEST_TYPE_TYPE_MASK | USB_BM_REQUEST_TYPE_RECIPIENT_MASK)){
         case USB_BM_REQUEST_TYPE_TYPE_STANDARD | USB_BM_REQUEST_TYPE_RECIPIENT_DEVICE:
             process_standard_device_request(request);
             break;
@@ -201,7 +222,8 @@ static void process_standard_device_request(const USB_Request_t* request)
             log_info("Standard Get Descriptor request received");
             descriptor_type = request->wValue >> 8;
             descriptor_length = request->wLength;
-//            descriptor_index = request->wValue & 0xFF;  /* Can be needed for getting the descriptor index */
+            /* Can be needed for getting the descriptor index */
+//            descriptor_index = request->wValue & 0xFF;
             switch(descriptor_type){
                 case USB_DESCRIPTOR_TYPE_DEVICE:
                     log_info("- Get Device Descriptor");

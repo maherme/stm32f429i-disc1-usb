@@ -1,9 +1,7 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_hid_standards.h
 *
 * @brief Header file containing the typedef and definitions of the USB HID standard.
-*
-* Public Functions:
 */
 
 #ifndef USB_HID_STANDARDS_H

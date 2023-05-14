@@ -1,4 +1,4 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file systeminit.c
 *
 * @brief File containing the APIs for initiating the device.
@@ -15,9 +15,9 @@
 #include "stm32f4xx.h"
 #include <stdint.h>
 
-/** @brief system_log_level declared variable in logger.h with the log level */
+/** @brief Declared variable in logger.h with the log level */
 log_level_t system_log_level = LOG_LEVEL_DEBUG;
-/** @brief SystemCoreClock declared variable in system_stm32f4xxx.h for storing the system core clock */
+/** @brief Declared variable in system_stm32f4xxx.h for storing the system core clock */
 uint32_t SystemCoreClock = 72000000;
 
 /***********************************************************************************************************/
@@ -36,9 +36,9 @@ static inline __attribute__((always_inline)) void configure_clock(void);
  */
 __attribute__((unused)) static inline __attribute__((always_inline)) void configure_mco1(void);
 
-/***********************************************************************************************************/
-/*                                       Public API Definitions                                            */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Public API Definitions                                    */
+/***************************************************************************************************/
 
 /**
  * @brief Function for initializing the device (CMSIS).
@@ -50,9 +50,9 @@ void SystemInit(void)
     configure_clock();
 }
 
-/***********************************************************************************************************/
-/*                                       Static Function Definitions                                       */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Function Definitions                               */
+/***************************************************************************************************/
 
 static inline __attribute__((always_inline)) void configure_clock(void)
 {
@@ -68,9 +68,10 @@ static inline __attribute__((always_inline)) void configure_clock(void)
     /* Configure PLL */
     MODIFY_REG(
         RCC->PLLCFGR,
-        RCC_PLLCFGR_PLLM | RCC_PLLCFGR_PLLN | RCC_PLLCFGR_PLLQ | RCC_PLLCFGR_PLLSRC | RCC_PLLCFGR_PLLP,
-        _VAL2FLD(RCC_PLLCFGR_PLLM, 4) | _VAL2FLD(RCC_PLLCFGR_PLLN, 72) | _VAL2FLD(RCC_PLLCFGR_PLLQ, 3) | _VAL2FLD(RCC_PLLCFGR_PLLSRC, 1)
-    );
+        RCC_PLLCFGR_PLLM | RCC_PLLCFGR_PLLN | RCC_PLLCFGR_PLLQ | RCC_PLLCFGR_PLLSRC |
+        RCC_PLLCFGR_PLLP,
+        _VAL2FLD(RCC_PLLCFGR_PLLM, 4) | _VAL2FLD(RCC_PLLCFGR_PLLN, 72) |
+        _VAL2FLD(RCC_PLLCFGR_PLLQ, 3) | _VAL2FLD(RCC_PLLCFGR_PLLSRC, 1));
 
     /* Enable PLL */
     SET_BIT(RCC->CR, RCC_CR_PLLON);

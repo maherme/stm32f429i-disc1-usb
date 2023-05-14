@@ -1,9 +1,7 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file helper_math.h
 *
 * @brief Header file containing the prototypes of the APIs for helper math.
-*
-* Public Functions:
 */
 
 #ifndef HELPER_MATH_H

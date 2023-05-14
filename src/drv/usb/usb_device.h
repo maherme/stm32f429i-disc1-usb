@@ -1,9 +1,7 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_device.h
 *
 * @brief Header file containing the typedef and definitions of the USB device.
-*
-* Public Functions:
 */
 
 #ifndef USB_DEVICE_H
@@ -25,6 +23,5 @@ typedef struct
     void const* ptr_in_buffer;
     uint32_t in_data_size;
 }USB_Device_t;
-
 
 #endif /* USB_DEVICE_H */

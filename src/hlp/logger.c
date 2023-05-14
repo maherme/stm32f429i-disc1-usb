@@ -92,7 +92,7 @@ void log_debug_array(char const* const label, void const* array, uint16_t const 
 /**
  * @brief Function which overrides the _write function defined in the system call library. 
  */
-int _write(int file, char* ptr, int len)
+int _write( __attribute__((unused)) int file, char* ptr, int len)
 {
     for(int i = 0; i < len; i++){
         ITM_SendChar((*ptr++));

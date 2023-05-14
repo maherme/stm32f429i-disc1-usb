@@ -45,19 +45,25 @@ static void USB_Reset_Received_Handler(void);
  */
 static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t byte_cnt);
 
+/**
+ * @brief Function for managing the poll event.
+ * @return void
+*/
 static void USB_Polled_Handler(void);
 
 /**
  * @brief Function for completing an IN transfer.
+ * @param[in] endpoint_number is the endpoint number for the IN transfer.
  * @return void
  */
 static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number);
 
 /**
  * @brief Function for completing an OUT transfer.
+ * @param[in] endpoint_number is the endpoint number for the OUT transfer.
  * @return void
  */
-static void USB_Out_Transfer_Completed_Handler(uint8_t endpoint_number);
+static void USB_Out_Transfer_Completed_Handler(__attribute__((unused)) uint8_t endpoint_number);
 
 static void USB_Device_Configure(void);
 
@@ -142,7 +148,7 @@ static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number)
     }
 }
 
-static void USB_Out_Transfer_Completed_Handler(uint8_t endpoint_number)
+static void USB_Out_Transfer_Completed_Handler(__attribute__((unused)) uint8_t endpoint_number)
 {
     /* To be defined */
 }

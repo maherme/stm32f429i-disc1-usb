@@ -1,4 +1,4 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_driver.c
 *
 * @brief File containing the APIs for USB driver.
@@ -15,25 +15,27 @@
 #include <stdint.h>
 #include <strings.h>
 
-/***********************************************************************************************************/
-/*                                       Static Function Prototypes                                        */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Function Prototypes                                */
+/***************************************************************************************************/
 
 /**
- * @brief Function for calculating the address of the structure which contains the registers of a specific
- *        IN endpoint.
+ * @brief Function for calculating the address of the structure which contains the registers of a
+ *        specific IN endpoint.
  * @param[in] endpoint_number The number of the IN endpoint to access its registers.
  * @return a pointer to the structure contains the registers of a specific IN endpoint.
  */
-static inline __attribute__((always_inline)) USB_OTG_INEndpointTypeDef* IN_ENDPOINT(uint8_t endpoint_number);
+static inline __attribute__((always_inline))
+USB_OTG_INEndpointTypeDef* IN_ENDPOINT(uint8_t endpoint_number);
 
 /**
- * @brief Function for calculating the address of the structure which contains the registers of a specific
- *        OUT endpoint.
+ * @brief Function for calculating the address of the structure which contains the registers of a
+ *        specific OUT endpoint.
  * @param[in] endpoint_number The number of the OUT endpoint to access its registers.
  * @return a pointer to the structure contains the registers of a specific OUT endpoint.
  */
-static inline __attribute__((always_inline)) USB_OTG_OUTEndpointTypeDef* OUT_ENDPOINT(uint8_t endpoint_number);
+static inline __attribute__((always_inline))
+USB_OTG_OUTEndpointTypeDef* OUT_ENDPOINT(uint8_t endpoint_number);
 
 /**
  * @brief Function for getting the FIFO data of an enpoint.
@@ -137,7 +139,7 @@ static void USB_Disconnect(void);
 /**
  * @brief Function for configuring an IN endpoint
  * @param[in] endpoint_number is the number of the endpoint to configure.
- * @param[in] endpoint_type is the type of endpoint to configure.
+ * @param[in] endpoint_type is the type of endpoint to configure, @ref USBEndpointType_t.
  * @param[in] endpoint_size is the size of the endpoint to configure.
  * @return void
  */
@@ -181,9 +183,9 @@ static void USB_Flush_TxFIFO(uint8_t endpoint_number);
  */
 static void USB_IRQ_Handler(void);
 
-/***********************************************************************************************************/
-/*                                       Global Variables                                                  */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Global Variables                                          */
+/***************************************************************************************************/
 
 const USB_Driver_t USB_driver = {
     .USB_Init = &USB_Init,
@@ -198,22 +200,24 @@ const USB_Driver_t USB_driver = {
     .USB_Poll = &USB_IRQ_Handler
 };
 
-/***********************************************************************************************************/
-/*                                       Public API Definitions                                            */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Public API Definitions                                    */
+/***************************************************************************************************/
 
-/***********************************************************************************************************/
-/*                                       Static Function Definitions                                       */
-/***********************************************************************************************************/
+/***************************************************************************************************/
+/*                                       Static Function Definitions                               */
+/***************************************************************************************************/
 
-static inline __attribute__((always_inline)) USB_OTG_INEndpointTypeDef* IN_ENDPOINT(uint8_t endpoint_number)
+static inline __attribute__((always_inline))
+USB_OTG_INEndpointTypeDef* IN_ENDPOINT(uint8_t endpoint_number)
 {
     return(USB_OTG_INEndpointTypeDef*)(USB_OTG_HS_PERIPH_BASE + 
                                        USB_OTG_IN_ENDPOINT_BASE + 
                                        (endpoint_number * 0x20));
 }
 
-static inline __attribute__((always_inline)) USB_OTG_OUTEndpointTypeDef* OUT_ENDPOINT(uint8_t endpoint_number)
+static inline __attribute__((always_inline))
+USB_OTG_OUTEndpointTypeDef* OUT_ENDPOINT(uint8_t endpoint_number)
 {
     return(USB_OTG_OUTEndpointTypeDef*)(USB_OTG_HS_PERIPH_BASE +
                                         USB_OTG_OUT_ENDPOINT_BASE +
@@ -234,8 +238,8 @@ static void USB_Configure_Endpoint0(uint16_t endpoint_size)
     MODIFY_REG(
         IN_ENDPOINT(0)->DIEPCTL,
         USB_OTG_DIEPCTL_MPSIZ,
-        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) | USB_OTG_DIEPCTL_SNAK
-    );
+        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) |
+        USB_OTG_DIEPCTL_SNAK);
 
     /* Clear NAK and enable endpoint data transmission */
     SET_BIT(OUT_ENDPOINT(0)->DOEPCTL, USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK);
@@ -314,14 +318,18 @@ static inline __attribute__((always_inline)) void USB_Refresh_FIFO_Start_Address
     uint16_t start_address = _FLD2VAL(USB_OTG_GRXFSIZ_RXFD, USB_OTG_HS->GRXFSIZ)*4;
 
     /* Update the start address of the TxFIFO */
-    MODIFY_REG(USB_OTG_HS->DIEPTXF0_HNPTXFSIZ, USB_OTG_TX0FSA, _VAL2FLD(USB_OTG_TX0FSA, start_address));
+    MODIFY_REG(USB_OTG_HS->DIEPTXF0_HNPTXFSIZ,
+               USB_OTG_TX0FSA,
+               _VAL2FLD(USB_OTG_TX0FSA, start_address));
 
     /* Next start address is after where the last TxFIFO ends */
     start_address += _FLD2VAL(USB_OTG_TX0FD, USB_OTG_HS->DIEPTXF0_HNPTXFSIZ)*4;
 
     /* Update the start address of the rest of TxFIFOs */
     for(uint8_t i = 0; i < (USB_ENDPOINT_COUNT - 1); i++){
-        MODIFY_REG(USB_OTG_HS->DIEPTXF[i], USB_OTG_NPTXFSA, _VAL2FLD(USB_OTG_NPTXFSA, start_address));
+        MODIFY_REG(USB_OTG_HS->DIEPTXF[i],
+                   USB_OTG_NPTXFSA,
+                   _VAL2FLD(USB_OTG_NPTXFSA, start_address));
         start_address += _FLD2VAL(USB_OTG_NPTXFD, USB_OTG_HS->DIEPTXF[i])*4;
     }
 }
@@ -469,15 +477,14 @@ static void USB_Configure_IN_Endpoint(uint8_t endpoint_number,
     /* Unmask all interrupts of the IN endpoint */
     SET_BIT(USB_OTG_HS_DEVICE->DAINTMSK, 1 << endpoint_number);
 
-    /* Activate the endpoint, set endpoint handshake to NAK (not ready to send data), set DATA0 packet
-       configures its type, its maximum packet size and assigns it a TxFIFO */
+    /* Activate the endpoint, set endpoint handshake to NAK (not ready to send data), set DATA0
+       packet configures its type, its maximum packet size and assigns it a TxFIFO */
     MODIFY_REG(
         IN_ENDPOINT(endpoint_number)->DIEPCTL,
         USB_OTG_DIEPCTL_MPSIZ | USB_OTG_DIEPCTL_EPTYP | USB_OTG_DIEPCTL_TXFNUM,
-        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) | USB_OTG_DIEPCTL_SNAK |
-        _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) | _VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, endpoint_number) |
-        USB_OTG_DIEPCTL_SD0PID_SEVNFRM
-    );
+        USB_OTG_DIEPCTL_USBAEP | _VAL2FLD(USB_OTG_DIEPCTL_MPSIZ, endpoint_size) |
+        USB_OTG_DIEPCTL_SNAK | _VAL2FLD(USB_OTG_DIEPCTL_EPTYP, endpoint_type) |
+        _VAL2FLD(USB_OTG_DIEPCTL_TXFNUM, endpoint_number) | USB_OTG_DIEPCTL_SD0PID_SEVNFRM);
 
     USB_Configure_TxFIFO_Size(endpoint_number, endpoint_size);
 }

@@ -16,6 +16,30 @@
 #include "hid_usage_button.h"
 #include <stdint.h>
 
+/**
+ * @brief Structure for managing the HID report.
+ */
+typedef struct
+{
+    int8_t x;
+    int8_t y;
+    uint8_t buttons;
+} __attribute__((__packed__)) HID_Report_t;
+
+/**
+ * @brief Structure combining all descriptors.
+ */
+typedef struct
+{
+    USB_StdCfgDescriptor_t usb_configuration_descriptor;
+    USB_InterfaceDescriptor_t usb_interface_descriptor;
+    USB_HIDDescriptor_t usb_mouse_hid_descriptor;
+    USB_EndpointDescriptor_t usb_mouse_endpoint_descriptor;
+}USB_CfgDescriptorCombination_t;
+
+/**
+ * @brief Structure implementing the device descriptor.
+ */
 const USB_StdDeviceDescriptor_t device_descriptor = {
     .bLength = sizeof(USB_StdDeviceDescriptor_t),
     .bDescriptorType = USB_DESCRIPTOR_TYPE_DEVICE,
@@ -33,6 +57,9 @@ const USB_StdDeviceDescriptor_t device_descriptor = {
     .bNumConfigurations = 1
 };
 
+/**
+ * @brief Array implementing the HID report descriptor.
+ */
 const uint8_t hid_report_descriptor[] = {
     HID_USAGE_PAGE(HID_PAGE_DESKTOP),
     HID_USAGE(HID_DESKTOP_MOUSE),
@@ -62,14 +89,9 @@ const uint8_t hid_report_descriptor[] = {
     HID_END_COLLECTION
 };
 
-typedef struct
-{
-    USB_StdCfgDescriptor_t usb_configuration_descriptor;
-    USB_InterfaceDescriptor_t usb_interface_descriptor;
-    USB_HIDDescriptor_t usb_mouse_hid_descriptor;
-    USB_EndpointDescriptor_t usb_mouse_endpoint_descriptor;
-}USB_CfgDescriptorCombination_t;
-
+/**
+ * @brief Structure implementing the combination of configuration descriptors.
+ */
 const USB_CfgDescriptorCombination_t cfg_descriptor_combination = {
     .usb_configuration_descriptor = {
         .bLength = sizeof(USB_StdCfgDescriptor_t),
@@ -110,12 +132,5 @@ const USB_CfgDescriptorCombination_t cfg_descriptor_combination = {
         .wDescriptorLength0 = sizeof(hid_report_descriptor)
     }
 };
-
-typedef struct
-{
-    int8_t x;
-    int8_t y;
-    uint8_t buttons;
-} __attribute__((__packed__)) HID_Report_t;
 
 #endif /* USB_DEVICE_DESCRIPTOR_H */

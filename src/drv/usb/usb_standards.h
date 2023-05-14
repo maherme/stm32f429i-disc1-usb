@@ -1,4 +1,4 @@
-/********************************************************************************************************//**
+/************************************************************************************************//**
 * @file usb_standards.h
 *
 * @brief Header file containing the typedef and definitions of the USB standard.
@@ -12,7 +12,8 @@
 #include <stdint.h>
 
 /**
- * @name USB device bit mapped request type fields.
+ * @defgroup USB_BM_REQUEST_TYPE USB Device Bit Mapped Request Type Fields.
+ * @brief Bit mapped request type fields for managing the @ref USB_STD_REQUESTS
  * @{
  */
 #define USB_BM_REQUEST_TYPE_DIRECTION_MASK      (1 << 7)
@@ -30,7 +31,8 @@
 /** @} */
 
 /**
- * @name USB standard requests.
+ * @defgroup USB_STD_REQUESTS USB Standard Requests.
+ * @brief USB standard requests which a host can send.
  * @{
  */
 #define USB_STANDARD_GET_STATUS         0x00
@@ -47,26 +49,40 @@
 /** @} */
 
 /**
- * @name USB standard descriptor types.
+ * @defgroup USB_STD_DESCRIPTOR_TYPES USB Standard Descriptor Types.
+ * @brief Used for indicating the type of descriptor.
  * @{
  */
+/** @brief Device */
 #define USB_DESCRIPTOR_TYPE_DEVICE          0x01
+/** @brief Configuration */
 #define USB_DESCRIPTOR_TYPE_CONFIGURATION   0x02
+/** @brief String (Optional) */
 #define USB_DESCRIPTOR_TYPE_STRING          0x03
+/** @brief Interface */
 #define USB_DESCRIPTOR_TYPE_INTERFACE       0x04
+/** @brief Endpoint */
 #define USB_DESCRIPTOR_TYPE_ENDPOINT        0x05
+/** @brief Device qualifier (only for devices that supports both full and high speeds) */
 #define USB_DESCRIPTOR_TYPE_QUALIFIER       0x06
+/** @brief Other speed configuration (only for devices that supports both full and high speeds) */
 #define USB_DESCRIPTOR_TYPE_OTHER           0x07
+/** @brief Interfae power */
 #define USB_DESCRIPTOR_TYPE_INTERFACEPOWER  0x08
+/** @brief Only for On-The-Go devices */
 #define USB_DESCRIPTOR_TYPE_OTG             0x09
+/** @brief Debug */
 #define USB_DESCRIPTOR_TYPE_DEBUG           0x0A
+/** @brief Interface association (Only for composite devices) */
 #define USB_DESCRIPTOR_TYPE_INTERFACEASSOC  0x0B
 #define USB_DESCRIPTOR_TYPE_CS_INTERFACE    0x24
 #define USB_DESCRIPTOR_TYPE_CS_ENDPOINT     0x25
 /** @} */
 
 /**
- * @name USB classes.
+ * @defgroup USB_STD_CLASSES USB Class Codes.
+ * @brief USB defines class code information that is used to identify a device’s functionality and to
+ *        nominally load a device driver based on that functionality.
  * @{
  */
 #define USB_CLASS_PER_INTERFACE 0x00
@@ -123,7 +139,7 @@ typedef enum
 }USBDeviceState_t;
 
 /**
- * @brief List of possible states of the control transfer of the USB.
+ * @brief List of possible states for the control transfer of the USB.
  */
 typedef enum
 {
@@ -154,66 +170,117 @@ typedef struct
  */
 typedef struct
 {
+    /** @brief The direction of the request, type of request and designated recipient */
     uint8_t bmRequestType;
+    /** @brief Request identity */
     uint8_t bRequest;
+    /** @brief Parameter passed with the request */
     uint16_t wValue;
+    /** @brief Parameter passed with the request */
     uint16_t wIndex;
+    /** @brief Number of bytes to transfer if there is a data phase */
     uint16_t wLength;
 }USB_Request_t;
 
 /**
- * @brief Struct which the USB standard device dercriptor fields.
+ * @brief Struct with the USB standard device dercriptor fields.
  */
 typedef struct
 {
+    /** @brief Provides the length of the descriptor in bytes */
     uint8_t bLength;
-    uint8_t bDescriptorType;
+    /** @brief Must be value of @ref USB_DESCRIPTOR_TYPE_DEVICE */
+    uint8_t bDescriptorType; 
+    /** @brief USB specification release number */
     uint16_t bcdUSB;
+    /** @brief USB device class */
     uint8_t bDeviceClass;
+    /** @brief USB device subclass */
     uint8_t bDeviceSubClass;
+    /** @brief USB device protocol */
     uint8_t bDeviceProtocol;
+    /** @brief Maximum packet size for endpoint 0 (8, 16, 32 or 64 bytes) */
     uint8_t bMaxPacketSize0;
+    /** @brief Vendor ID for the USB device */
     uint16_t idVendor;
+    /** @brief Product ID for the USB device */
     uint16_t idProduct;
+    /** @brief Device release number */
     uint16_t bcdDevice;
+    /** @brief String descriptor index for the manufacturer's name */
     uint8_t iManufacturer;
+    /** @brief String descriptor index for the product name */
     uint8_t iProduct;
+    /** @brief String descriptor index for the product serial number */
     uint8_t iSerialNumber;
+    /** @brief Total number of supported configurations by the USB device */
     uint8_t bNumConfigurations;
 } __attribute__((__packed__)) USB_StdDeviceDescriptor_t;
 
+/**
+ * @brief Struct with the USB configuration dercriptor fields.
+ */
 typedef struct
 {
+    /** @brief Provides the length of the descriptor in bytes */
     uint8_t bLength;
+    /** @brief Must be value of @ref USB_DESCRIPTOR_TYPE_CONFIGURATION */
     uint8_t bDescriptorType;
+    /** @brief The number of bytes in the configuration descriptor and its subordinate descriptors */
     uint16_t wTotalLength;
+    /** @brief Number of interfaces in the configuration */
     uint8_t bNumInterfaces;
+    /** @brief Value that identifies the selected configuration */
     uint8_t bConfigurationValue;
+    /** @brief Index of string descriptor for configuration details */
     uint8_t iConfiguration;
+    /** @brief Self/Bus powered and wakeup settings */
     uint8_t bmAttributes;
+    /** @brief Device current requirement */
     uint8_t bMaxPower;
 } __attribute__((__packed__)) USB_StdCfgDescriptor_t;
 
+/**
+ * @brief Struct with the USB interface dercriptor fields.
+ */
 typedef struct
 {
+    /** @brief Provides the length of the descriptor in bytes */
     uint8_t bLength;
+    /** @brief Must be value of @ref USB_DESCRIPTOR_TYPE_INTERFACE */
     uint8_t bDescriptorType;
+    /** @brief Identify number for this interface */
     uint8_t bInterfaceNumber;
+    /** @brief Selected alternate setting for interface */
     uint8_t bAlternateSetting;
+    /** @brief Number of endpoints supported by interface */
     uint8_t bNumEndpoints;
+    /** @brief Interface call ID */
     uint8_t bInterfaceClass;
+    /** @brief Interface subclass ID */
     uint8_t bInterfaceSubClass;
+    /** @brief Interface protocol ID */
     uint8_t bInterfaceProtocol;
+    /** @brief Index of the string descriptor describing the interface */
     uint8_t iInterface;
 } __attribute__((__packed__)) USB_InterfaceDescriptor_t;
 
+/**
+ * @brief Struct with the USB endpoint dercriptor fields.
+ */
 typedef struct
 {
+    /** @brief Provides the length of the descriptor in bytes */
     uint8_t bLength;
+    /** @brief Must be value of @ref USB_DESCRIPTOR_TYPE_ENDPOINT */
     uint8_t bDescriptorType;
+    /** @brief Logical address of the endpoint including direction mask */
     uint8_t bEndpointAddress;
+    /** @brief Endpoint attributes, possible value from @ref USBEndpointType_t */
     uint8_t bmAttributes;
+    /** @brief Maximum packet size of the endpoint */
     uint16_t wMaxPacketSize;
+    /** @brief Polling interval of the endpoint (frames) */
     uint8_t bInterval;
 } __attribute__((__packed__)) USB_EndpointDescriptor_t;
 

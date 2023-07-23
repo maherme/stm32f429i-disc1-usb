@@ -43,7 +43,10 @@ static void USB_Reset_Received_Handler(void);
  * @param[in] byte_cnt is the amount of received bytes.
  * @return void
  */
-static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t byte_cnt);
+static void USB_Setup_Data_Received_Handler(
+    __attribute__((unused)) uint8_t endpoint_number,
+    uint16_t byte_cnt
+);
 
 /**
  * @brief Function for managing the poll event.
@@ -65,6 +68,10 @@ static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number);
  */
 static void USB_Out_Transfer_Completed_Handler(__attribute__((unused)) uint8_t endpoint_number);
 
+/**
+ * @brief Function for setting the configuration of the device.
+ * @return void
+*/
 static void USB_Device_Configure(void);
 
 /**
@@ -100,6 +107,13 @@ static void process_standard_interface_request(const USB_Request_t* request);
  * @return void
  */
 static void process_control_transfer_stage(void);
+
+/**
+ * @brief Function for sendind the report of the mouse, it will send information for moving the
+ *        mouse to the rigth.
+ * @return void
+*/
+static void write_mouse_report(void);
 
 /***************************************************************************************************/
 /*                                       Global Variables                                          */
@@ -143,7 +157,9 @@ static void USB_Reset_Received_Handler(void)
     USB_driver.USB_Set_Device_Address(0);
 }
 
-static void USB_Setup_Data_Received_Handler(uint8_t endpoint_number, uint16_t byte_cnt)
+static void USB_Setup_Data_Received_Handler(
+    __attribute__((unused))uint8_t endpoint_number,
+    uint16_t byte_cnt)
 {
     USB_driver.USB_Read_Packet(usb_device_handle->ptr_out_buffer, byte_cnt);
     log_debug_array("SETUP data: ", usb_device_handle->ptr_out_buffer, byte_cnt);
@@ -165,6 +181,11 @@ static void USB_In_Transfer_Completed_Handler(uint8_t endpoint_number)
         USB_driver.USB_Write_Packet(0, NULL, 0);
         log_info("Switching control stage to OUT STATUS");
         usb_device_handle->control_transfer_stage = USB_CONTROL_STAGE_STATUS_OUT;
+    }
+
+    if(endpoint_number ==
+       (cfg_descriptor_combination.usb_mouse_endpoint_descriptor.bEndpointAddress & 0x0F)){
+        write_mouse_report();
     }
 }
 
@@ -339,4 +360,19 @@ static void process_control_transfer_stage(void)
             /* do nothing */
             break;
     }
+}
+
+static void write_mouse_report(void)
+{
+    log_debug("Sending USB HID mouse report");
+
+    HID_Report_t hid_report = {
+        .x = 5
+    };
+
+    USB_driver.USB_Write_Packet(
+        (cfg_descriptor_combination.usb_mouse_endpoint_descriptor.bEndpointAddress & 0x0F),
+        &hid_report,
+        sizeof(hid_report)
+    );
 }

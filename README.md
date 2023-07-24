@@ -248,7 +248,8 @@ Some debug information can be optained through the ITM debug port of the cortex-
   ...
 ```
 
-You can also use the wireshark utility for debugging or testing the USB implementation, I have attached here a log file, you can open it and use the following filter configuration for getting the USB driver communication:
+You can also use the wireshark utility for debugging or testing the USB implementation. I have attached here an exported log file ([usb.pcapng](doc/usb.pcapng)) from wireshark. You can open it and use the following filter configuration for getting the USB driver communication:
 ```
 (usb.addr != "1.5.0") && (usb.addr != "1.5.1") && (usb.addr != "1.5.2") && (usb.addr != "1.5.3") && (usb.addr != "1.4.0") && (usb.addr != "1.4.2") && (usb.addr != "1.0.0") && (usb.addr != "1.1.0") && (usb.addr != "1.1.1") && (usb.addr != "1.10.0") && (usb.addr != "1.11.0")
 ```
+Your wireshark looks like this snapshot:  

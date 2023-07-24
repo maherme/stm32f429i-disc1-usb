@@ -255,3 +255,27 @@ You can also use the wireshark utility for debugging or testing the USB implemen
 Your wireshark looks like this snapshot:
 
 ![Alt text](doc/usb_wireshark.png)
+
+Notice the ID Vendor and ID Product are the same defined in the device_descriptor struct in the [usb_device_descriptor.h](src/drv/usb/usb_device_descriptor.h) file:
+```c
+  /**
+   * @brief Structure implementing the device descriptor.
+   * @showinitializer
+   */
+  const USB_StdDeviceDescriptor_t device_descriptor = {
+      .bLength = sizeof(USB_StdDeviceDescriptor_t),
+      .bDescriptorType = USB_DESCRIPTOR_TYPE_DEVICE,
+      .bcdUSB = 0x0200,
+      .bDeviceClass = USB_CLASS_PER_INTERFACE,
+      .bDeviceSubClass = USB_SUBCLASS_NONE,
+      .bDeviceProtocol = USB_PROTOCOL_NONE,
+      .bMaxPacketSize0 = 8,
+      .idVendor = 0x6666,
+      .idProduct = 0x13AA,
+      .bcdDevice = 0x0100,
+      .iManufacturer = 0,
+      .iProduct = 0,
+      .iSerialNumber = 0,
+      .bNumConfigurations = 1
+  };
+```

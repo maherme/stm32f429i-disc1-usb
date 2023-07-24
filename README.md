@@ -21,7 +21,8 @@ python waf distclean
 ```
 
 ## Architecture
-For the USB driver implementation I have used an opaque object design pattern. Here you can find a UML diagram of the architecture:
+For the USB driver implementation I have used an opaque object design pattern.  
+Here you can find an UML diagram of the architecture:
 ```mermaid
   classDiagram
   class main

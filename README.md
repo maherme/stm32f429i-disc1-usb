@@ -70,7 +70,10 @@ Here you can find an UML diagram of the architecture:
 
 ## Testing
 For testing this application you need to connect the USB USER connector of the stm32f429i-disc1 to the host computer and the USB ST-LINK which you will use to program the board.
-Once the firmware is running you will see your mouse moving to the right as in this image:  
+Once the firmware is running you will see your mouse moving to the right as in this image:
+
+![Alt text](doc/usb_test.gif)
+
 If you are using a Linux OS in the host machine you can use the dmesg command for getting some information about the USB:
 ```console
   [14049.359626] usb 1-1: new full-speed USB device number 6 using xhci_hcd

@@ -252,4 +252,6 @@ You can also use the wireshark utility for debugging or testing the USB implemen
 ```
 (usb.addr != "1.5.0") && (usb.addr != "1.5.1") && (usb.addr != "1.5.2") && (usb.addr != "1.5.3") && (usb.addr != "1.4.0") && (usb.addr != "1.4.2") && (usb.addr != "1.0.0") && (usb.addr != "1.1.0") && (usb.addr != "1.1.1") && (usb.addr != "1.10.0") && (usb.addr != "1.11.0")
 ```
-Your wireshark looks like this snapshot:  
+Your wireshark looks like this snapshot:
+
+![Alt text](doc/usb_wireshark.png)
